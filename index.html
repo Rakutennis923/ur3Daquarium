@@ -77,7 +77,7 @@
             pointer-events: none;
         }
         @keyframes popIn {
-            0% { opacity: 0; transform: scale(0.9) translateY(12px); }
+            0% { opacity: 0; transform: scale(0.92) translateY(10px); }
             100% { opacity: 1; transform: scale(1) translateY(0); }
         }
         .animate-pop {
@@ -125,8 +125,8 @@
                 <button onclick="setLighting('sunset')" id="btn-light-sunset" class="px-2.5 py-1.5 rounded-xl text-xs font-medium transition text-slate-300 hover:text-white" title="都市黃昏">🌅</button>
                 <button onclick="setLighting('night')" id="btn-light-night" class="px-2.5 py-1.5 rounded-xl text-xs font-medium transition text-slate-300 hover:text-white" title="深海夜光">🌙</button>
             </div>
-            <button onclick="toggleMute()" id="mute-btn" class="glass w-10 h-10 rounded-2xl flex items-center justify-center text-base hover:bg-white/10 transition" title="聲音開關">🔊</button>
-            <button onclick="toggleZenMode()" class="glass px-3 py-2 h-10 rounded-2xl flex items-center gap-1.5 text-xs sm:text-sm font-medium text-cyan-200 hover:bg-white/10 transition" title="隱藏介面純粹觀賞">
+            <button onclick="toggleMute()" id="mute-btn" class="glass w-9 h-9 sm:w-10 sm:h-10 rounded-2xl flex items-center justify-center text-sm sm:text-base hover:bg-white/10 transition" title="聲音開關">🔊</button>
+            <button onclick="toggleZenMode()" class="glass px-2.5 sm:px-3 py-1.5 sm:py-2 h-9 sm:h-10 rounded-2xl flex items-center gap-1.5 text-xs sm:text-sm font-medium text-cyan-200 hover:bg-white/10 transition" title="隱藏介面純粹觀賞">
                 <span>🌿</span>
                 <span class="hidden sm:inline">純淨模式</span>
             </button>
@@ -134,8 +134,8 @@
     </header>
 
     <!-- 右側常駐控制欄：時間流速拉桿 + 離線生態事件日誌 -->
-    <aside id="right-dock" class="ui-transition fixed right-2.5 sm:right-4 top-16 sm:top-20 z-30 flex flex-col items-end gap-2 pointer-events-none">
-        <div class="glass px-2.5 py-1.5 rounded-xl w-36 sm:w-40 pointer-events-auto">
+    <aside id="right-dock" class="ui-transition fixed right-2.5 sm:right-4 top-28 sm:top-20 z-30 flex flex-col items-end gap-2 pointer-events-none">
+        <div class="glass px-2.5 py-1.5 rounded-xl w-32 sm:w-40 pointer-events-auto">
             <div class="flex items-center justify-between text-[10px] mb-1">
                 <span class="text-slate-300 flex items-center gap-0.5"><span>⏱️</span> 流速</span>
                 <span id="speed-display" class="font-bold text-cyan-300 bg-cyan-500/20 px-1.5 py-0.2 rounded">1X</span>
@@ -173,44 +173,44 @@
     </button>
 
     <!-- 操作提示膠囊 -->
-    <div id="hint-pill" class="ui-transition fixed top-16 sm:top-20 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
-        <div class="glass-light px-4 py-1.5 rounded-full text-[11px] sm:text-xs text-cyan-100/90 whitespace-nowrap shadow">
-            💧 點擊水中投放飼料 • 拖曳旋轉視角 • 點擊魚兒查看詳情
+    <div id="hint-pill" class="ui-transition fixed top-28 sm:top-20 left-2.5 sm:left-1/2 sm:-translate-x-1/2 z-20 pointer-events-none max-w-[54vw] sm:max-w-none">
+        <div class="glass-light px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-xl sm:rounded-full text-[10px] sm:text-xs text-cyan-100/90 leading-snug sm:whitespace-nowrap shadow">
+            💧 點水餵食 • 拖曳旋轉 • 點魚看詳情
         </div>
     </div>
 
     <!-- 單隻魚詳情卡片 -->
-    <div id="fish-inspector" class="hidden fixed bottom-24 left-1/2 -translate-x-1/2 sm:left-auto sm:right-5 sm:translate-x-0 sm:bottom-24 z-30 w-[92%] max-w-xs glass rounded-3xl p-4 animate-pop">
-        <div class="flex items-start justify-between mb-2">
-            <div class="flex items-center gap-2.5">
-                <div id="insp-icon" class="w-11 h-11 rounded-2xl bg-cyan-500/20 flex items-center justify-center text-2xl border border-cyan-400/30">🐠</div>
-                <div>
-                    <div class="flex items-center gap-1.5">
-                        <input id="insp-name-input" type="text" maxlength="12" onchange="renameSelectedFish(this.value)" class="bg-transparent border-b border-dashed border-cyan-400/50 text-sm font-bold text-white w-28 focus:outline-none focus:border-cyan-300" title="點擊修改名字">
-                        <span id="insp-shiny-badge" class="hidden text-[10px] px-1.5 py-0.5 rounded-md bg-amber-400/20 text-amber-300 border border-amber-400/40 font-semibold">✨ 異色</span>
+    <div id="fish-inspector" class="hidden fixed bottom-16 left-0 right-0 mx-auto sm:left-auto sm:right-5 sm:mx-0 sm:bottom-20 z-30 w-[84%] max-w-[272px] glass rounded-2xl p-3 animate-pop">
+        <div class="flex items-start justify-between mb-1.5">
+            <div class="flex items-center gap-2">
+                <div id="insp-icon" class="w-9 h-9 rounded-xl bg-cyan-500/20 flex items-center justify-center text-xl border border-cyan-400/30 shrink-0">🐠</div>
+                <div class="min-w-0">
+                    <div class="flex items-center gap-1">
+                        <input id="insp-name-input" type="text" maxlength="12" onchange="renameSelectedFish(this.value)" class="bg-transparent border-b border-dashed border-cyan-400/50 text-xs sm:text-sm font-bold text-white w-24 focus:outline-none focus:border-cyan-300" title="點擊修改名字">
+                        <span id="insp-shiny-badge" class="hidden text-[9px] px-1 py-0.5 rounded bg-amber-400/20 text-amber-300 border border-amber-400/40 font-semibold shrink-0">✨ 異色</span>
                     </div>
-                    <div id="insp-species" class="text-xs text-cyan-200/75 mt-0.5">孔雀魚 • 普通</div>
+                    <div id="insp-species" class="text-[11px] text-cyan-200/75 mt-0.5 truncate">孔雀魚 • 普通</div>
                 </div>
             </div>
-            <button onclick="closeInspector()" class="text-slate-400 hover:text-white p-1.5 rounded-xl hover:bg-white/10 transition text-sm">✕</button>
+            <button onclick="closeInspector()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-white/10 transition text-xs shrink-0">✕</button>
         </div>
 
-        <div class="space-y-2.5 my-3 text-xs">
+        <div class="space-y-2 my-2 text-[11px]">
             <div>
-                <div class="flex justify-between text-slate-300 mb-1">
+                <div class="flex justify-between text-slate-300 mb-0.5">
                     <span>成長階段：<strong id="insp-stage" class="text-cyan-300">魚苗</strong></span>
                     <span id="insp-growth-pct">0%</span>
                 </div>
-                <div class="w-full h-2 bg-slate-800/80 rounded-full overflow-hidden">
+                <div class="w-full h-1.5 bg-slate-800/80 rounded-full overflow-hidden">
                     <div id="insp-growth-bar" class="h-full bg-gradient-to-r from-cyan-400 to-emerald-400 transition-all duration-300" style="width: 0%"></div>
                 </div>
             </div>
             <div>
-                <div class="flex justify-between text-slate-300 mb-1">
+                <div class="flex justify-between text-slate-300 mb-0.5">
                     <span>飽食程度</span>
                     <span id="insp-hunger-pct">100%</span>
                 </div>
-                <div class="w-full h-2 bg-slate-800/80 rounded-full overflow-hidden">
+                <div class="w-full h-1.5 bg-slate-800/80 rounded-full overflow-hidden">
                     <div id="insp-hunger-bar" class="h-full bg-gradient-to-r from-amber-400 to-orange-400 transition-all duration-300" style="width: 100%"></div>
                 </div>
             </div>
@@ -219,11 +219,11 @@
             </div>
         </div>
 
-        <div class="flex items-center gap-2 mt-3">
-            <button id="insp-lock-btn" onclick="toggleLockSelectedFish()" class="flex-1 py-2 px-3 rounded-2xl glass-light hover:bg-white/15 text-xs font-medium flex items-center justify-center gap-1 transition">
+        <div class="flex items-center gap-1.5 mt-2">
+            <button id="insp-lock-btn" onclick="toggleLockSelectedFish()" class="flex-1 py-1.5 px-2 rounded-xl glass-light hover:bg-white/15 text-[11px] font-medium flex items-center justify-center gap-1 transition">
                 <span>🔓</span> <span>未上鎖</span>
             </button>
-            <button id="insp-sell-btn" onclick="sellSelectedFish()" class="flex-1 py-2 px-3 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-1 shadow-lg transition">
+            <button id="insp-sell-btn" onclick="sellSelectedFish()" class="flex-1 py-1.5 px-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-bold text-[11px] flex items-center justify-center gap-1 shadow-lg transition">
                 <span>🪙</span> <span id="insp-sell-price">出售 30</span>
             </button>
         </div>
