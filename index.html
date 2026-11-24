@@ -819,10 +819,12 @@ function buildAquariumEnvironment() {
     baseMesh.position.y = -TANK.h / 2 - 0.14;
     aquariumGroup.add(baseMesh);
 
-    const rimGeo = new THREE.BoxGeometry(TANK.w + 0.24, 0.16, TANK.d + 0.24);
-    const rimMesh = new THREE.Mesh(rimGeo, baseMat);
-    rimMesh.position.y = TANK.h / 2 + 0.06;
-    aquariumGroup.add(rimMesh);
+    const rimFrame = new THREE.LineSegments(
+        new THREE.EdgesGeometry(new THREE.BoxGeometry(TANK.w + 0.12, 0.1, TANK.d + 0.12)),
+        new THREE.LineBasicMaterial({ color: '#334155', transparent: true, opacity: 0.7 })
+    );
+    rimFrame.position.y = TANK.h / 2 + 0.04;
+    aquariumGroup.add(rimFrame);
 
     const sandGeo = new THREE.BoxGeometry(TANK.w - 0.06, 0.36, TANK.d - 0.06, 24, 1, 16);
     const posAttr = sandGeo.attributes.position;
@@ -875,28 +877,22 @@ function buildAquariumEnvironment() {
     const waterMat = new THREE.MeshPhysicalMaterial({
         color: '#0ea5e9',
         transparent: true,
-        opacity: 0.14,
+        opacity: 0.09,
         roughness: 0.1,
-        metalness: 0.05,
-        side: THREE.DoubleSide,
+        metalness: 0.02,
+        side: THREE.BackSide,
         depthWrite: false
     });
     const waterMesh = new THREE.Mesh(waterGeo, waterMat);
     waterMesh.position.y = -0.05;
     aquariumGroup.add(waterMesh);
 
-    const surfaceGeo = new THREE.PlaneGeometry(TANK.w - 0.08, TANK.d - 0.08);
-    const surfaceMat = new THREE.MeshPhysicalMaterial({
-        color: '#7dd3fc',
-        transparent: true,
-        opacity: 0.28,
-        roughness: 0.15,
-        side: THREE.DoubleSide
-    });
-    const surfaceMesh = new THREE.Mesh(surfaceGeo, surfaceMat);
-    surfaceMesh.rotation.x = -Math.PI / 2;
-    surfaceMesh.position.y = TANK.waterTop;
-    aquariumGroup.add(surfaceMesh);
+    const surfaceRimGeo = new THREE.EdgesGeometry(new THREE.PlaneGeometry(TANK.w - 0.08, TANK.d - 0.08));
+    const surfaceRimMat = new THREE.LineBasicMaterial({ color: '#7dd3fc', transparent: true, opacity: 0.6 });
+    const surfaceRim = new THREE.LineSegments(surfaceRimGeo, surfaceRimMat);
+    surfaceRim.rotation.x = -Math.PI / 2;
+    surfaceRim.position.y = TANK.waterTop;
+    aquariumGroup.add(surfaceRim);
 
     const edgesGeo = new THREE.EdgesGeometry(new THREE.BoxGeometry(TANK.w, TANK.h, TANK.d));
     const edgesMat = new THREE.LineBasicMaterial({ color: '#bae6fd', transparent: true, opacity: 0.45 });
@@ -1221,7 +1217,7 @@ function createSculptedBodyGeometry(species) {
     const pos = geo.attributes.position;
 
     let len = 1.35, hScale = 0.56, wScale = 0.34;
-    if (species.bodyType === 'guppy') { len = 1.18; hScale = 0.42; wScale = 0.26; }
+    if (species.bodyType === 'guppy') { len = 0.76; hScale = 0.27; wScale = 0.17; }
     else if (species.bodyType === 'tetra') { len = 1.15; hScale = 0.40; wScale = 0.24; }
     else if (species.bodyType === 'goldfish') { len = 1.25; hScale = 0.78; wScale = 0.54; }
     else if (species.bodyType === 'clown') { len = 1.32; hScale = 0.62; wScale = 0.36; }
@@ -1763,7 +1759,7 @@ function setupControls() {
         const dy = e.clientY - prevPointer.y;
         if (Math.hypot(dx, dy) > 4) dragMoved = true;
         camTheta -= dx * 0.0075;
-        camPhi = Math.max(0.45, Math.min(1.62, camPhi - dy * 0.0075));
+        camPhi = Math.max(0.18, Math.min(1.62, camPhi - dy * 0.0075));
         updateCameraPosition();
         prevPointer = { x: e.clientX, y: e.clientY };
     });
@@ -1806,7 +1802,7 @@ function setupControls() {
             const dy = touch.clientY - prevPointer.y;
             if (Math.hypot(dx, dy) > 5) dragMoved = true;
             camTheta -= dx * 0.011;
-            camPhi = Math.max(0.45, Math.min(1.62, camPhi - dy * 0.011));
+            camPhi = Math.max(0.18, Math.min(1.62, camPhi - dy * 0.011));
             updateCameraPosition();
             prevPointer = { x: touch.clientX, y: touch.clientY };
         } else if (e.touches.length === 2 && initialPinchDist) {
