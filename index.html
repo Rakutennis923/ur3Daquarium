@@ -1,0 +1,2152 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>3D 療癒水族箱 - Urban Chillquarium</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+            background-color: #07131f;
+        }
+        #canvas-container {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            outline: none;
+        }
+        .glass {
+            background: rgba(12, 27, 44, 0.72);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(125, 211, 252, 0.22);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+        }
+        .glass-light {
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+        .ui-transition {
+            transition: opacity 0.35s ease, transform 0.35s ease;
+        }
+        .ui-hidden {
+            opacity: 0 !important;
+            pointer-events: none !important;
+            transform: translateY(10px);
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.3);
+            border-radius: 999px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(56, 189, 248, 0.4);
+            border-radius: 999px;
+        }
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0) scale(0.95); }
+            100% { opacity: 0; transform: translateY(-48px) scale(1.15); }
+        }
+        .coin-float {
+            animation: floatUp 1.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+            pointer-events: none;
+        }
+        @keyframes popIn {
+            0% { opacity: 0; transform: scale(0.9) translateY(12px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .animate-pop {
+            animation: popIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+    </style>
+</head>
+<body class="text-slate-100">
+
+    <!-- 3D 畫布容器 -->
+    <div id="canvas-container"></div>
+
+    <!-- 浮動金幣提示容器 -->
+    <div id="floating-texts" class="fixed inset-0 pointer-events-none z-20 overflow-hidden"></div>
+
+    <!-- 頂部狀態列 -->
+    <header id="top-hud" class="ui-transition fixed top-3 left-3 right-3 sm:top-4 sm:left-5 sm:right-5 z-30 flex flex-wrap items-center justify-between gap-2 pointer-events-none">
+        <div class="flex items-center gap-2 sm:gap-3 pointer-events-auto">
+            <div class="glass px-3.5 py-2 rounded-2xl flex items-center gap-2">
+                <span class="text-xl">🪙</span>
+                <div>
+                    <div class="text-[10px] text-cyan-200/70 leading-none">療癒金幣</div>
+                    <div id="hud-coins" class="text-sm sm:text-base font-bold text-amber-300 tracking-wide">200</div>
+                </div>
+            </div>
+            <div class="glass px-3.5 py-2 rounded-2xl flex items-center gap-2">
+                <span class="text-xl">🐠</span>
+                <div>
+                    <div class="text-[10px] text-cyan-200/70 leading-none">魚缸容量</div>
+                    <div id="hud-capacity" class="text-sm sm:text-base font-bold text-cyan-200">0 / 8</div>
+                </div>
+            </div>
+            <div class="hidden md:flex glass px-3.5 py-2 rounded-2xl items-center gap-2">
+                <span class="text-lg">✨</span>
+                <div>
+                    <div class="text-[10px] text-cyan-200/70 leading-none">被動收益</div>
+                    <div id="hud-income" class="text-sm font-semibold text-emerald-300">+0 / 10秒</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2 pointer-events-auto">
+            <div class="glass p-1 rounded-2xl flex items-center gap-1">
+                <button onclick="setLighting('day')" id="btn-light-day" class="px-2.5 py-1.5 rounded-xl text-xs font-medium transition bg-cyan-500/30 text-white" title="日光模式">☀️</button>
+                <button onclick="setLighting('sunset')" id="btn-light-sunset" class="px-2.5 py-1.5 rounded-xl text-xs font-medium transition text-slate-300 hover:text-white" title="都市黃昏">🌅</button>
+                <button onclick="setLighting('night')" id="btn-light-night" class="px-2.5 py-1.5 rounded-xl text-xs font-medium transition text-slate-300 hover:text-white" title="深海夜光">🌙</button>
+            </div>
+            <button onclick="toggleMute()" id="mute-btn" class="glass w-10 h-10 rounded-2xl flex items-center justify-center text-base hover:bg-white/10 transition" title="聲音開關">🔊</button>
+            <button onclick="toggleZenMode()" class="glass px-3 py-2 h-10 rounded-2xl flex items-center gap-1.5 text-xs sm:text-sm font-medium text-cyan-200 hover:bg-white/10 transition" title="隱藏介面純粹觀賞">
+                <span>🌿</span>
+                <span class="hidden sm:inline">純淨模式</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- 右側常駐控制欄：時間流速拉桿 + 離線生態事件日誌 -->
+    <aside id="right-dock" class="ui-transition fixed right-3 sm:right-4 top-20 sm:top-24 z-30 flex flex-col items-end gap-2.5 pointer-events-none">
+        <div class="glass px-3.5 py-2.5 rounded-2xl w-48 sm:w-52 pointer-events-auto">
+            <div class="flex items-center justify-between text-xs mb-1.5">
+                <span class="text-slate-300 flex items-center gap-1"><span>⏱️</span> 時間流速</span>
+                <span id="speed-display" class="font-bold text-cyan-300 bg-cyan-500/20 px-2 py-0.5 rounded-lg">1.0x</span>
+            </div>
+            <input id="time-speed-slider" type="range" min="0" max="10" step="0.5" value="1" oninput="setTimeScale(this.value)" class="w-full accent-cyan-400 cursor-pointer h-1.5 bg-slate-700 rounded-lg">
+            <div class="flex justify-between text-[10px] text-slate-400 mt-1">
+                <span class="cursor-pointer hover:text-white" onclick="setTimeScale(0)">暫停</span>
+                <span class="cursor-pointer hover:text-white" onclick="setTimeScale(1)">1x</span>
+                <span class="cursor-pointer hover:text-white" onclick="setTimeScale(5)">5x</span>
+                <span class="cursor-pointer hover:text-white" onclick="setTimeScale(10)">10x</span>
+            </div>
+        </div>
+
+        <div id="offline-events-card" class="hidden glass w-64 sm:w-72 rounded-3xl p-4 pointer-events-auto animate-pop border border-cyan-400/35">
+            <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-1.5 font-bold text-sm text-cyan-200">
+                    <span>📋</span>
+                    <span>離線期間生態日誌</span>
+                </div>
+                <button onclick="closeOfflineReport()" class="text-slate-400 hover:text-white w-6 h-6 rounded-full hover:bg-white/10 flex items-center justify-center text-xs">✕</button>
+            </div>
+            <div id="offline-duration-badge" class="text-[11px] text-amber-300 bg-amber-500/15 border border-amber-400/25 px-2.5 py-1 rounded-xl mb-2.5 inline-block">
+                離線經過：0 分鐘
+            </div>
+            <ul id="offline-events-list" class="space-y-1.5 text-xs text-slate-200 max-h-48 overflow-y-auto pr-1"></ul>
+            <button onclick="closeOfflineReport()" class="mt-3 w-full py-2 rounded-xl bg-cyan-500/25 hover:bg-cyan-500/40 text-cyan-100 font-medium text-xs transition">
+                收下並繼續觀賞 ✨
+            </button>
+        </div>
+    </aside>
+
+    <!-- 純淨觀賞模式還原按鈕 -->
+    <button id="restore-ui-btn" onclick="toggleZenMode()" class="hidden fixed bottom-5 right-5 z-40 glass px-4 py-2.5 rounded-full text-xs sm:text-sm font-medium text-cyan-200 hover:bg-white/15 transition shadow-lg">
+        👁️ 顯示控制面板
+    </button>
+
+    <!-- 操作提示膠囊 -->
+    <div id="hint-pill" class="ui-transition fixed top-16 sm:top-20 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
+        <div class="glass-light px-4 py-1.5 rounded-full text-[11px] sm:text-xs text-cyan-100/90 whitespace-nowrap shadow">
+            💧 點擊水中投放飼料 • 拖曳旋轉視角 • 點擊魚兒查看詳情
+        </div>
+    </div>
+
+    <!-- 單隻魚詳情卡片 -->
+    <div id="fish-inspector" class="hidden fixed bottom-24 left-1/2 -translate-x-1/2 sm:left-auto sm:right-5 sm:translate-x-0 sm:bottom-24 z-30 w-[92%] max-w-xs glass rounded-3xl p-4 animate-pop">
+        <div class="flex items-start justify-between mb-2">
+            <div class="flex items-center gap-2.5">
+                <div id="insp-icon" class="w-11 h-11 rounded-2xl bg-cyan-500/20 flex items-center justify-center text-2xl border border-cyan-400/30">🐠</div>
+                <div>
+                    <div class="flex items-center gap-1.5">
+                        <input id="insp-name-input" type="text" maxlength="12" onchange="renameSelectedFish(this.value)" class="bg-transparent border-b border-dashed border-cyan-400/50 text-sm font-bold text-white w-28 focus:outline-none focus:border-cyan-300" title="點擊修改名字">
+                        <span id="insp-shiny-badge" class="hidden text-[10px] px-1.5 py-0.5 rounded-md bg-amber-400/20 text-amber-300 border border-amber-400/40 font-semibold">✨ 異色</span>
+                    </div>
+                    <div id="insp-species" class="text-xs text-cyan-200/75 mt-0.5">孔雀魚 • 普通</div>
+                </div>
+            </div>
+            <button onclick="closeInspector()" class="text-slate-400 hover:text-white p-1.5 rounded-xl hover:bg-white/10 transition text-sm">✕</button>
+        </div>
+
+        <div class="space-y-2.5 my-3 text-xs">
+            <div>
+                <div class="flex justify-between text-slate-300 mb-1">
+                    <span>成長階段：<strong id="insp-stage" class="text-cyan-300">魚苗</strong></span>
+                    <span id="insp-growth-pct">0%</span>
+                </div>
+                <div class="w-full h-2 bg-slate-800/80 rounded-full overflow-hidden">
+                    <div id="insp-growth-bar" class="h-full bg-gradient-to-r from-cyan-400 to-emerald-400 transition-all duration-300" style="width: 0%"></div>
+                </div>
+            </div>
+            <div>
+                <div class="flex justify-between text-slate-300 mb-1">
+                    <span>飽食程度</span>
+                    <span id="insp-hunger-pct">100%</span>
+                </div>
+                <div class="w-full h-2 bg-slate-800/80 rounded-full overflow-hidden">
+                    <div id="insp-hunger-bar" class="h-full bg-gradient-to-r from-amber-400 to-orange-400 transition-all duration-300" style="width: 100%"></div>
+                </div>
+            </div>
+            <div class="flex justify-between items-center pt-1 text-slate-300 border-t border-white/10">
+                <span>成魚被動收益：<strong id="insp-passive" class="text-emerald-300">+2 🪙/10s</strong></span>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2 mt-3">
+            <button id="insp-lock-btn" onclick="toggleLockSelectedFish()" class="flex-1 py-2 px-3 rounded-2xl glass-light hover:bg-white/15 text-xs font-medium flex items-center justify-center gap-1 transition">
+                <span>🔓</span> <span>未上鎖</span>
+            </button>
+            <button id="insp-sell-btn" onclick="sellSelectedFish()" class="flex-1 py-2 px-3 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-1 shadow-lg transition">
+                <span>🪙</span> <span id="insp-sell-price">出售 30</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 底部導覽列 -->
+    <nav id="bottom-nav" class="ui-transition fixed bottom-3 left-1/2 -translate-x-1/2 z-30 w-[94%] max-w-lg">
+        <div class="glass p-2 rounded-3xl grid grid-cols-4 gap-1.5 sm:gap-2">
+            <button onclick="openModal('shop')" class="py-2.5 px-2 rounded-2xl hover:bg-white/10 active:scale-95 transition flex flex-col items-center justify-center gap-1">
+                <span class="text-lg sm:text-xl">🛍️</span>
+                <span class="text-[11px] sm:text-xs font-medium text-cyan-100">魚苗商店</span>
+            </button>
+            <button onclick="openModal('upgrades')" class="py-2.5 px-2 rounded-2xl hover:bg-white/10 active:scale-95 transition flex flex-col items-center justify-center gap-1">
+                <span class="text-lg sm:text-xl">⚙️</span>
+                <span class="text-[11px] sm:text-xs font-medium text-cyan-100">設備升級</span>
+            </button>
+            <button onclick="openModal('decor')" class="py-2.5 px-2 rounded-2xl hover:bg-white/10 active:scale-95 transition flex flex-col items-center justify-center gap-1">
+                <span class="text-lg sm:text-xl">🪸</span>
+                <span class="text-[11px] sm:text-xs font-medium text-cyan-100">水族造景</span>
+            </button>
+            <button onclick="openModal('dex')" class="py-2.5 px-2 rounded-2xl hover:bg-white/10 active:scale-95 transition flex flex-col items-center justify-center gap-1">
+                <span class="text-lg sm:text-xl">📖</span>
+                <span class="text-[11px] sm:text-xs font-medium text-cyan-100">魚類圖鑑</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- 多功能彈出視窗 -->
+    <div id="modal-overlay" class="hidden fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-3 sm:p-5">
+        <div class="glass w-full max-w-2xl max-h-[82vh] rounded-3xl flex flex-col overflow-hidden animate-pop">
+            <div class="px-5 py-4 border-b border-white/10 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <span id="modal-icon" class="text-2xl">🛍️</span>
+                    <h2 id="modal-title" class="text-base sm:text-lg font-bold text-white">魚苗商店</h2>
+                </div>
+                <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-slate-200 transition">✕</button>
+            </div>
+            <div id="modal-body" class="p-4 sm:p-5 overflow-y-auto space-y-4"></div>
+        </div>
+    </div>
+
+    <!-- 提示訊息 Toast -->
+    <div id="toast-msg" class="fixed top-28 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-opacity duration-300">
+        <div id="toast-text" class="glass px-4 py-2 rounded-2xl text-xs sm:text-sm font-medium text-amber-200 border border-amber-400/30 shadow-xl"></div>
+    </div>
+
+<script>
+// 1. 遊戲核心資料庫：10 種擬真觀賞魚類定義
+const FISH_SPECIES = [
+    {
+        id: 'guppy', name: '孔雀魚', rarity: 'Common', icon: '🐟',
+        bodyType: 'guppy', baseColor: '#f97316', secColor: '#38bdf8', finColor: '#fb7185',
+        basePrice: 30, passiveRate: 1, growthTime: 45,
+        desc: '華麗寬大的豹紋扇形尾鰭與細長銀藍身軀，在水中輕盈擺動。'
+    },
+    {
+        id: 'neon_tetra', name: '紅蓮燈', rarity: 'Common', icon: '💠',
+        bodyType: 'tetra', baseColor: '#1d4ed8', secColor: '#ef4444', finColor: '#93c5fd',
+        basePrice: 35, passiveRate: 1, growthTime: 50,
+        desc: '體側貫穿一道螢光電光藍縱帶與鮮紅腹部，群游時宛如水下霓虹。'
+    },
+    {
+        id: 'goldfish', name: '流金金魚', rarity: 'Common', icon: '🐡',
+        bodyType: 'goldfish', baseColor: '#f59e0b', secColor: '#fef3c7', finColor: '#fb923c',
+        basePrice: 45, passiveRate: 2, growthTime: 60,
+        desc: '圓潤飽滿的橙金鱗片身軀搭配飄逸雙尾紗鰭，游姿優雅從容。'
+    },
+    {
+        id: 'clownfish', name: '公子小丑魚', rarity: 'Rare', icon: '🐠',
+        bodyType: 'clown', baseColor: '#ea580c', secColor: '#ffffff', finColor: '#fb923c',
+        basePrice: 75, passiveRate: 3, growthTime: 75,
+        desc: '鮮豔橘紅鱗片搭配三道鑲黑邊的純白垂直橫帶，雙胸鰭如船槳般活潑划動。'
+    },
+    {
+        id: 'blue_tang', name: '藍倒吊', rarity: 'Rare', icon: '🐟',
+        bodyType: 'tang', baseColor: '#2563eb', secColor: '#0f172a', finColor: '#facc15',
+        basePrice: 90, passiveRate: 4, growthTime: 85,
+        desc: '皇家寶藍橢圓側扁身軀點綴調色盤黑斑與鮮黃尾鰭，泳速敏捷。'
+    },
+    {
+        id: 'angelfish', name: '神仙魚', rarity: 'Rare', icon: '🦋',
+        bodyType: 'angel', baseColor: '#e2e8f0', secColor: '#1e293b', finColor: '#fde047',
+        basePrice: 110, passiveRate: 5, growthTime: 95,
+        desc: '極致側扁的菱形銀鱗身軀與修長飄逸的上下絲狀鰭條，氣質高雅。'
+    },
+    {
+        id: 'betta', name: '半月鬥魚', rarity: 'Epic', icon: '🌺',
+        bodyType: 'betta', baseColor: '#be123c', secColor: '#4f46e5', finColor: '#f43f5e',
+        basePrice: 190, passiveRate: 8, growthTime: 115,
+        desc: '展開如 180 度半月般的絲絨放射狀大尾鰭，寶石紅與靛紫光澤交織。'
+    },
+    {
+        id: 'lionfish', name: '簑鮋 (獅子魚)', rarity: 'Epic', icon: '🦁',
+        bodyType: 'lion', baseColor: '#991b1b', secColor: '#fef2f2', finColor: '#fca5a5',
+        basePrice: 240, passiveRate: 11, growthTime: 130,
+        desc: '紅白斑馬條紋身軀配以華麗放射狀羽翼長棘，如水下貴族般巡遊。'
+    },
+    {
+        id: 'arowana', name: '過背金龍魚', rarity: 'Mythic', icon: '🐉',
+        bodyType: 'arowana', baseColor: '#d97706', secColor: '#fef08a', finColor: '#b45309',
+        basePrice: 480, passiveRate: 20, growthTime: 155,
+        desc: '修長霸氣的黃金金屬大片鱗甲與下顎雙觸鬚，游動時展現王者波浪律動。'
+    },
+    {
+        id: 'mola_mola', name: '翻車魚 (曼波魚)', rarity: 'Mythic', icon: '🌊',
+        bodyType: 'mola', baseColor: '#94a3b8', secColor: '#475569', finColor: '#64748b',
+        basePrice: 540, passiveRate: 24, growthTime: 165,
+        desc: '銀灰斑駁的粗糙皮革質感巨型側扁身軀，靠上下兩片船舵狀長鰭悠然划水。'
+    }
+];
+
+const SEED_PACKS = [
+    {
+        id: 'freshwater', name: '淡水新手魚苗包', price: 45, icon: '🌱',
+        desc: '適合都市新手的溫和觀賞魚，成長快速。',
+        pool: [
+            { id: 'guppy', weight: 42 },
+            { id: 'neon_tetra', weight: 38 },
+            { id: 'goldfish', weight: 20 }
+        ]
+    },
+    {
+        id: 'tropical', name: '熱帶珊瑚魚苗包', price: 110, icon: '🏝️',
+        desc: '色彩繽紛的礁岩熱帶魚，有機會開出稀有與史詩品種。',
+        pool: [
+            { id: 'clownfish', weight: 35 },
+            { id: 'blue_tang', weight: 30 },
+            { id: 'angelfish', weight: 23 },
+            { id: 'betta', weight: 12 }
+        ]
+    },
+    {
+        id: 'deepsea', name: '深海珍稀傳說包', price: 280, icon: '🔮',
+        desc: '蘊含神話級水族霸主的高階魚苗，擁有極高收藏與被動收益。',
+        pool: [
+            { id: 'betta', weight: 35 },
+            { id: 'lionfish', weight: 35 },
+            { id: 'arowana', weight: 16 },
+            { id: 'mola_mola', weight: 14 }
+        ]
+    }
+];
+
+const DECORATIONS = [
+    { id: 'driftwood', name: '沉木與莫絲苔蘚', price: 120, icon: '🪵', bonusText: '增添自然森林氣息', unlocked: false },
+    { id: 'coral_reef', name: '彩虹活珊瑚礁', price: 250, icon: '🪸', bonusText: '全魚缸成長速度 +15%', unlocked: false },
+    { id: 'castle', name: '亞特蘭提斯古堡', price: 420, icon: '🏰', bonusText: '成魚被動金幣收益 +20%', unlocked: false },
+    { id: 'crystal', name: '深海發光水晶簇', price: 650, icon: '💎', bonusText: '異色變異(Shiny)機率提升至 22%', unlocked: false }
+];
+
+const RARITY_STYLES = {
+    Common: { label: '普通', color: 'text-slate-300', bg: 'bg-slate-500/20 border-slate-400/30' },
+    Rare: { label: '稀有', color: 'text-sky-300', bg: 'bg-sky-500/20 border-sky-400/30' },
+    Epic: { label: '史詩', color: 'text-purple-300', bg: 'bg-purple-500/20 border-purple-400/30' },
+    Mythic: { label: '傳說', color: 'text-amber-300', bg: 'bg-amber-500/20 border-amber-400/40' }
+};
+
+// 2. 遊戲狀態管理
+const DEFAULT_STATE = {
+    coins: 200,
+    tankLevel: 1,
+    foodLevel: 1,
+    lighting: 'day',
+    muted: false,
+    fishes: [],
+    discovered: [],
+    shinyDiscovered: [],
+    decorations: [],
+    lastSaveTime: Date.now()
+};
+
+let gameState = JSON.parse(JSON.stringify(DEFAULT_STATE));
+let selectedFishId = null;
+let isZenMode = false;
+let currentModalTab = null;
+let timeScale = 1.0;
+
+// 3. Web Audio API 療癒合成音效系統
+class HealingAudio {
+    constructor() {
+        this.ctx = null;
+    }
+    init() {
+        if (!this.ctx) {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (AudioContext) this.ctx = new AudioContext();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+            this.ctx.resume();
+        }
+    }
+    playWaterDrop() {
+        if (gameState.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        const baseFreq = 420 + Math.random() * 160;
+        osc.frequency.setValueAtTime(baseFreq, now);
+        osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.85, now + 0.14);
+        gain.gain.setValueAtTime(0.08, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.17);
+    }
+    playEatPop() {
+        if (gameState.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(280, now);
+        osc.frequency.exponentialRampToValueAtTime(520, now + 0.08);
+        gain.gain.setValueAtTime(0.06, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.1);
+    }
+    playCoinChime() {
+        if (gameState.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        [987.77, 1318.51].forEach((freq, idx) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, now + idx * 0.07);
+            gain.gain.setValueAtTime(0.07, now + idx * 0.07);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.07 + 0.35);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(now + idx * 0.07);
+            osc.stop(now + idx * 0.07 + 0.36);
+        });
+    }
+}
+const sound = new HealingAudio();
+
+// 4. Three.js 3D 水族箱場景建置
+let scene, camera, renderer;
+let tankGroup, fishGroup, foodGroup, decorGroup, bubbleGroup, plantGroup;
+let ambientLight, dirLight, pointLight1, pointLight2;
+let waterSurfaceMesh, sandCausticsMesh;
+let godRays = [];
+const fishMeshes = new Map();
+const foodPellets = [];
+const bubbles = [];
+const seaweeds = [];
+
+const TANK_W = 11.5;
+const TANK_H = 6.6;
+const TANK_D = 6.2;
+
+let camTheta = 0.25;
+let camPhi = 1.32;
+let camRadius = 15.5;
+let isDragging = false;
+let dragMoved = false;
+let prevPointer = { x: 0, y: 0 };
+
+const raycaster = new THREE.Raycaster();
+const pointerNDC = new THREE.Vector2();
+
+function initThreeJS() {
+    const container = document.getElementById('canvas-container');
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color('#081726');
+    scene.fog = new THREE.FogExp2('#081726', 0.022);
+
+    camera = new THREE.PerspectiveCamera(42, container.clientWidth / container.clientHeight, 0.1, 100);
+    updateCameraPosition();
+
+    renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.12;
+    container.appendChild(renderer.domElement);
+
+    ambientLight = new THREE.AmbientLight(0xbae6fd, 0.85);
+    scene.add(ambientLight);
+
+    dirLight = new THREE.DirectionalLight(0xffffff, 1.15);
+    dirLight.position.set(5, 12, 7);
+    dirLight.castShadow = true;
+    dirLight.shadow.mapSize.width = 1024;
+    dirLight.shadow.mapSize.height = 1024;
+    scene.add(dirLight);
+
+    pointLight1 = new THREE.PointLight(0x38bdf8, 0.9, 18);
+    pointLight1.position.set(-3.5, 2.5, 2);
+    scene.add(pointLight1);
+
+    pointLight2 = new THREE.PointLight(0xf472b6, 0.5, 18);
+    pointLight2.position.set(3.5, -1, -2);
+    scene.add(pointLight2);
+
+    tankGroup = new THREE.Group();
+    fishGroup = new THREE.Group();
+    foodGroup = new THREE.Group();
+    decorGroup = new THREE.Group();
+    bubbleGroup = new THREE.Group();
+    plantGroup = new THREE.Group();
+
+    scene.add(tankGroup, decorGroup, plantGroup, foodGroup, fishGroup, bubbleGroup);
+
+    buildAquariumEnvironment();
+    setupControls(renderer.domElement);
+
+    window.addEventListener('resize', () => {
+        if (!container) return;
+        camera.aspect = container.clientWidth / container.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(container.clientWidth, container.clientHeight);
+    });
+}
+
+function updateCameraPosition() {
+    const x = camRadius * Math.sin(camPhi) * Math.sin(camTheta);
+    const y = camRadius * Math.cos(camPhi);
+    const z = camRadius * Math.sin(camPhi) * Math.cos(camTheta);
+    camera.position.set(x, y, z);
+    camera.lookAt(0, -0.2, 0);
+}
+
+function buildAquariumEnvironment() {
+    const sandGeo = new THREE.BoxGeometry(TANK_W - 0.15, 0.55, TANK_D - 0.15, 24, 1, 16);
+    const pos = sandGeo.attributes.position;
+    for (let i = 0; i < pos.count; i++) {
+        if (pos.getY(i) > 0) {
+            const x = pos.getX(i);
+            const z = pos.getZ(i);
+            const ripple = Math.sin(x * 1.1) * 0.08 + Math.cos(z * 1.3) * 0.07;
+            pos.setY(i, pos.getY(i) + ripple);
+        }
+    }
+    sandGeo.computeVertexNormals();
+    const sandMat = new THREE.MeshStandardMaterial({
+        color: 0xe7d3b0,
+        roughness: 0.92,
+        metalness: 0.02
+    });
+    const sandMesh = new THREE.Mesh(sandGeo, sandMat);
+    sandMesh.position.y = -TANK_H / 2 + 0.25;
+    sandMesh.receiveShadow = true;
+    tankGroup.add(sandMesh);
+
+    const causticsCanvas = document.createElement('canvas');
+    causticsCanvas.width = 256;
+    causticsCanvas.height = 256;
+    const cCtx = causticsCanvas.getContext('2d');
+    cCtx.fillStyle = '#000000';
+    cCtx.fillRect(0, 0, 256, 256);
+    cCtx.strokeStyle = 'rgba(186, 230, 253, 0.45)';
+    cCtx.lineWidth = 3;
+    for (let i = 0; i < 28; i++) {
+        cCtx.beginPath();
+        cCtx.arc(Math.random() * 256, Math.random() * 256, 18 + Math.random() * 34, 0, Math.PI * 2);
+        cCtx.stroke();
+    }
+    const causticsTex = new THREE.CanvasTexture(causticsCanvas);
+    causticsTex.wrapS = THREE.RepeatWrapping;
+    causticsTex.wrapT = THREE.RepeatWrapping;
+    causticsTex.repeat.set(3, 2);
+
+    const causticsGeo = new THREE.PlaneGeometry(TANK_W - 0.3, TANK_D - 0.3);
+    const causticsMat = new THREE.MeshBasicMaterial({
+        map: causticsTex,
+        transparent: true,
+        opacity: 0.28,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+    });
+    sandCausticsMesh = new THREE.Mesh(causticsGeo, causticsMat);
+    sandCausticsMesh.rotation.x = -Math.PI / 2;
+    sandCausticsMesh.position.y = -TANK_H / 2 + 0.62;
+    tankGroup.add(sandCausticsMesh);
+
+    const waterGeo = new THREE.PlaneGeometry(TANK_W - 0.1, TANK_D - 0.1, 24, 14);
+    waterGeo.rotateX(-Math.PI / 2);
+    const waterMat = new THREE.MeshPhysicalMaterial({
+        color: 0x38bdf8,
+        transparent: true,
+        opacity: 0.32,
+        roughness: 0.12,
+        metalness: 0.05,
+        side: THREE.DoubleSide
+    });
+    waterSurfaceMesh = new THREE.Mesh(waterGeo, waterMat);
+    waterSurfaceMesh.position.y = TANK_H / 2 - 0.35;
+    tankGroup.add(waterSurfaceMesh);
+
+    godRays = [];
+    const rayMat = new THREE.MeshBasicMaterial({
+        color: 0xbae6fd,
+        transparent: true,
+        opacity: 0.055,
+        blending: THREE.AdditiveBlending,
+        side: THREE.DoubleSide,
+        depthWrite: false
+    });
+    for (let r = 0; r < 5; r++) {
+        const rayGeo = new THREE.PlaneGeometry(1.4 + (r % 2) * 0.6, TANK_H - 0.6);
+        const rayMesh = new THREE.Mesh(rayGeo, rayMat.clone());
+        rayMesh.position.set(-3.8 + r * 1.9, 0.1, -1.2 + (r % 2) * 1.4);
+        rayMesh.rotation.y = (r - 2) * 0.25;
+        rayMesh.rotation.z = -0.12;
+        tankGroup.add(rayMesh);
+        godRays.push({ mesh: rayMesh, phase: r * 1.3 });
+    }
+
+    const backGeo = new THREE.PlaneGeometry(TANK_W, TANK_H);
+    const backMat = new THREE.MeshStandardMaterial({
+        color: 0x0c4a6e,
+        roughness: 0.85,
+        transparent: true,
+        opacity: 0.38
+    });
+    const backWall = new THREE.Mesh(backGeo, backMat);
+    backWall.position.z = -TANK_D / 2;
+    tankGroup.add(backWall);
+
+    const glassBoxGeo = new THREE.BoxGeometry(TANK_W, TANK_H, TANK_D);
+    const edges = new THREE.EdgesGeometry(glassBoxGeo);
+    const lineMat = new THREE.LineBasicMaterial({ color: 0xa5f3fc, transparent: true, opacity: 0.42 });
+    const glassFrame = new THREE.LineSegments(edges, lineMat);
+    tankGroup.add(glassFrame);
+
+    const seaweedMat = new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.75 });
+    const plantSpots = [
+        [-4.5, -2.0], [-4.1, -1.6], [-3.6, -2.2],
+        [4.2, -1.9], [4.6, -1.4], [3.8, 1.8], [-4.3, 1.9]
+    ];
+    plantSpots.forEach(([px, pz], idx) => {
+        const group = new THREE.Group();
+        const blades = 3 + (idx % 2);
+        for (let b = 0; b < blades; b++) {
+            const h = 1.6 + Math.random() * 1.4;
+            const bladeGeo = new THREE.ConeGeometry(0.11, h, 5);
+            bladeGeo.translate(0, h / 2, 0);
+            const blade = new THREE.Mesh(bladeGeo, seaweedMat);
+            blade.position.set((Math.random() - 0.5) * 0.25, 0, (Math.random() - 0.5) * 0.25);
+            blade.rotation.set((Math.random() - 0.5) * 0.2, 0, (Math.random() - 0.5) * 0.2);
+            group.add(blade);
+        }
+        group.position.set(px, -TANK_H / 2 + 0.28, pz);
+        plantGroup.add(group);
+        seaweeds.push({ group, speed: 1.2 + Math.random() * 0.8, phase: idx * 0.9 });
+    });
+
+    const bubbleGeo = new THREE.SphereGeometry(0.055, 8, 8);
+    const bubbleMat = new THREE.MeshPhysicalMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.55,
+        roughness: 0.1
+    });
+    for (let i = 0; i < 24; i++) {
+        const bMesh = new THREE.Mesh(bubbleGeo, bubbleMat);
+        resetBubble(bMesh, true);
+        bubbleGroup.add(bMesh);
+        bubbles.push({
+            mesh: bMesh,
+            speed: 0.7 + Math.random() * 0.8,
+            wobbleOffset: Math.random() * Math.PI * 2
+        });
+    }
+}
+
+function resetBubble(mesh, randomY) {
+    mesh.position.set(
+        -4.2 + (Math.random() - 0.5) * 0.7,
+        randomY ? (Math.random() - 0.5) * (TANK_H - 1.2) : -TANK_H / 2 + 0.4,
+        -2.0 + (Math.random() - 0.5) * 0.7
+    );
+    const s = 0.5 + Math.random() * 0.9;
+    mesh.scale.set(s, s, s);
+}
+
+// 5. 高擬真 3D 魚類生成引擎
+const fishTextureCache = new Map();
+
+function getFishTextures(species, isShiny) {
+    const key = `${species.id}_${isShiny ? 'shiny' : 'norm'}`;
+    if (fishTextureCache.has(key)) return fishTextureCache.get(key);
+
+    const primary = isShiny ? '#fbbf24' : species.baseColor;
+    const secondary = isShiny ? '#ec4899' : species.secColor;
+    const finCol = isShiny ? '#fef08a' : species.finColor;
+
+    const w = 512, h = 256;
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+
+    const bumpCanvas = document.createElement('canvas');
+    bumpCanvas.width = w;
+    bumpCanvas.height = h;
+    const bCtx = bumpCanvas.getContext('2d');
+    bCtx.fillStyle = '#808080';
+    bCtx.fillRect(0, 0, w, h);
+
+    const bodyGrad = ctx.createLinearGradient(0, 0, 0, h);
+    bodyGrad.addColorStop(0, shadeHex(primary, -38));
+    bodyGrad.addColorStop(0.45, primary);
+    bodyGrad.addColorStop(0.82, mixHex(primary, '#f8fafc', 0.45));
+    bodyGrad.addColorStop(1, '#f1f5f9');
+    ctx.fillStyle = bodyGrad;
+    ctx.fillRect(0, 0, w, h);
+
+    const scaleR = species.bodyType === 'arowana' ? 16 : (species.bodyType === 'mola' ? 8 : 11);
+    for (let row = 0; row < h / scaleR + 2; row++) {
+        for (let col = 0; col < w / (scaleR * 1.4) + 2; col++) {
+            const cx = col * scaleR * 1.4 + (row % 2) * (scaleR * 0.7);
+            const cy = row * scaleR * 0.85;
+
+            ctx.beginPath();
+            ctx.arc(cx, cy, scaleR, -Math.PI * 0.45, Math.PI * 0.45);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.16)';
+            ctx.lineWidth = species.bodyType === 'arowana' ? 2.2 : 1.2;
+            ctx.stroke();
+
+            const bGrad = bCtx.createRadialGradient(cx - 2, cy, 1, cx, cy, scaleR);
+            bGrad.addColorStop(0, '#d4d4d4');
+            bGrad.addColorStop(0.85, '#9a9a9a');
+            bGrad.addColorStop(1, '#4a4a4a');
+            bCtx.beginPath();
+            bCtx.arc(cx, cy, scaleR * 0.95, 0, Math.PI * 2);
+            bCtx.fillStyle = bGrad;
+            bCtx.fill();
+        }
+    }
+
+    if (species.bodyType === 'neon_tetra' || species.id === 'neon_tetra') {
+        ctx.fillStyle = secondary;
+        ctx.fillRect(0, h * 0.52, w * 0.65, h * 0.28);
+        const neonGrad = ctx.createLinearGradient(0, h * 0.36, 0, h * 0.5);
+        neonGrad.addColorStop(0, '#38bdf8');
+        neonGrad.addColorStop(0.5, '#a5f3fc');
+        neonGrad.addColorStop(1, '#0284c7');
+        ctx.fillStyle = neonGrad;
+        ctx.fillRect(w * 0.12, h * 0.36, w * 0.82, h * 0.13);
+    } else if (species.bodyType === 'clown') {
+        [0.24, 0.52, 0.82].forEach((posRatio, idx) => {
+            const bandW = idx === 1 ? 38 : 26;
+            const bx = w * posRatio - bandW / 2;
+            ctx.fillStyle = '#090d16';
+            ctx.fillRect(bx - 5, 0, bandW + 10, h);
+            ctx.fillStyle = secondary;
+            ctx.fillRect(bx, 0, bandW, h);
+        });
+    } else if (species.bodyType === 'tang') {
+        ctx.fillStyle = secondary;
+        ctx.beginPath();
+        ctx.ellipse(w * 0.55, h * 0.42, w * 0.28, h * 0.24, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = primary;
+        ctx.beginPath();
+        ctx.ellipse(w * 0.56, h * 0.44, w * 0.14, h * 0.11, 0, 0, Math.PI * 2);
+        ctx.fill();
+    } else if (species.bodyType === 'angel') {
+        [0.22, 0.44, 0.66, 0.85].forEach((posRatio, idx) => {
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.78)';
+            ctx.fillRect(w * posRatio, 0, idx % 2 === 0 ? 22 : 14, h);
+        });
+    } else if (species.bodyType === 'lion') {
+        for (let x = 20; x < w; x += 28) {
+            ctx.fillStyle = secondary;
+            ctx.fillRect(x, 0, 11, h);
+        }
+    } else if (species.bodyType === 'arowana') {
+        for (let row = 1; row < h / scaleR; row++) {
+            for (let col = 1; col < w / (scaleR * 1.4); col++) {
+                const cx = col * scaleR * 1.4 + (row % 2) * (scaleR * 0.7);
+                const cy = row * scaleR * 0.85;
+                ctx.beginPath();
+                ctx.arc(cx, cy, scaleR * 0.75, -Math.PI * 0.4, Math.PI * 0.4);
+                ctx.strokeStyle = secondary;
+                ctx.lineWidth = 3.2;
+                ctx.stroke();
+            }
+        }
+    } else if (species.bodyType === 'mola') {
+        for (let i = 0; i < 65; i++) {
+            ctx.fillStyle = i % 2 === 0 ? 'rgba(241,245,249,0.22)' : 'rgba(30,41,59,0.28)';
+            ctx.beginPath();
+            ctx.arc(Math.random() * w, Math.random() * h, 4 + Math.random() * 14, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    } else if (species.bodyType === 'guppy') {
+        const tailGrad = ctx.createLinearGradient(0, 0, w * 0.55, 0);
+        tailGrad.addColorStop(0, secondary);
+        tailGrad.addColorStop(1, primary);
+        ctx.fillStyle = tailGrad;
+        ctx.fillRect(0, 0, w * 0.48, h);
+        for (let s = 0; s < 24; s++) {
+            ctx.fillStyle = '#0f172a';
+            ctx.beginPath();
+            ctx.arc(Math.random() * w * 0.45, Math.random() * h, 3 + Math.random() * 4, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    const fCanvas = document.createElement('canvas');
+    fCanvas.width = 256;
+    fCanvas.height = 256;
+    const fCtx = fCanvas.getContext('2d');
+    const fGrad = fCtx.createLinearGradient(0, 0, 256, 0);
+    fGrad.addColorStop(0, primary);
+    fGrad.addColorStop(0.55, finCol);
+    fGrad.addColorStop(1, 'rgba(255,255,255,0.25)');
+    fCtx.fillStyle = fGrad;
+    fCtx.fillRect(0, 0, 256, 256);
+
+    for (let r = 8; r < 256; r += 11) {
+        fCtx.beginPath();
+        fCtx.moveTo(0, r);
+        fCtx.quadraticCurveTo(128, r + (r - 128) * 0.18, 256, r + (r - 128) * 0.35);
+        fCtx.strokeStyle = 'rgba(255, 255, 255, 0.32)';
+        fCtx.lineWidth = 1.6;
+        fCtx.stroke();
+    }
+    if (species.bodyType === 'guppy' || species.bodyType === 'betta') {
+        for (let d = 0; d < 26; d++) {
+            fCtx.fillStyle = species.bodyType === 'guppy' ? 'rgba(15,23,42,0.75)' : 'rgba(255,255,255,0.35)';
+            fCtx.beginPath();
+            fCtx.arc(70 + Math.random() * 170, 20 + Math.random() * 216, 3 + Math.random() * 5, 0, Math.PI * 2);
+            fCtx.fill();
+        }
+    }
+
+    const bodyTex = new THREE.CanvasTexture(canvas);
+    const bumpTex = new THREE.CanvasTexture(bumpCanvas);
+    const finTex = new THREE.CanvasTexture(fCanvas);
+    const result = { bodyTex, bumpTex, finTex, primary, secondary, finCol };
+    fishTextureCache.set(key, result);
+    return result;
+}
+
+function shadeHex(hex, amt) {
+    const num = parseInt(hex.replace('#', ''), 16);
+    const r = Math.min(255, Math.max(0, (num >> 16) + amt));
+    const g = Math.min(255, Math.max(0, ((num >> 8) & 0x00FF) + amt));
+    const b = Math.min(255, Math.max(0, (num & 0x0000FF) + amt));
+    return `rgb(${r},${g},${b})`;
+}
+
+function mixHex(hex1, hex2, ratio) {
+    const n1 = parseInt(hex1.replace('#', ''), 16);
+    const n2 = parseInt(hex2.replace('#', ''), 16);
+    const r = Math.round(((n1 >> 16) * (1 - ratio)) + ((n2 >> 16) * ratio));
+    const g = Math.round((((n1 >> 8) & 0xff) * (1 - ratio)) + (((n2 >> 8) & 0xff) * ratio));
+    const b = Math.round(((n1 & 0xff) * (1 - ratio)) + ((n2 & 0xff) * ratio));
+    return `rgb(${r},${g},${b})`;
+}
+
+function buildSculptedBodyGeometry(bodyType) {
+    let sx = 0.22, sy = 0.28, sz = 0.62;
+    if (bodyType === 'goldfish') { sx = 0.34; sy = 0.38; sz = 0.56; }
+    else if (bodyType === 'angel') { sx = 0.11; sy = 0.54; sz = 0.50; }
+    else if (bodyType === 'tang') { sx = 0.14; sy = 0.44; sz = 0.62; }
+    else if (bodyType === 'arowana') { sx = 0.19; sy = 0.26; sz = 1.05; }
+    else if (bodyType === 'mola') { sx = 0.18; sy = 0.72; sz = 0.68; }
+    else if (bodyType === 'guppy' || bodyType === 'tetra') { sx = 0.16; sy = 0.20; sz = 0.52; }
+    else if (bodyType === 'betta') { sx = 0.17; sy = 0.24; sz = 0.56; }
+    else if (bodyType === 'lion') { sx = 0.25; sy = 0.34; sz = 0.62; }
+
+    const geo = new THREE.SphereGeometry(1, 28, 20);
+    const pos = geo.attributes.position;
+    const baseX = new Float32Array(pos.count);
+    const baseZ = new Float32Array(pos.count);
+
+    for (let i = 0; i < pos.count; i++) {
+        let x = pos.getX(i);
+        let y = pos.getY(i);
+        let z = pos.getZ(i);
+
+        if (z > 0) {
+            const headTaper = 1.0 - Math.pow(z, 2.2) * 0.42;
+            x *= headTaper;
+            y *= (1.0 - Math.pow(z, 2.4) * 0.35);
+            if (bodyType === 'arowana' && y < 0) y *= 0.85;
+        } else {
+            const tailDist = Math.abs(z);
+            const peduncle = bodyType === 'mola'
+                ? (1.0 - Math.pow(tailDist, 1.5) * 0.25)
+                : (1.0 - Math.pow(tailDist, 1.45) * 0.76);
+            x *= Math.max(0.14, peduncle);
+            y *= Math.max(0.20, peduncle);
+        }
+
+        if (y > 0 && bodyType !== 'arowana') {
+            y += Math.sin((1 - Math.abs(z)) * Math.PI * 0.5) * 0.12;
+        }
+
+        const fx = x * sx;
+        const fy = y * sy;
+        const fz = z * sz;
+        pos.setXYZ(i, fx, fy, fz);
+        baseX[i] = fx;
+        baseZ[i] = fz;
+    }
+    geo.computeVertexNormals();
+    geo.userData = { sx, sy, sz, baseX, baseZ, halfLen: sz };
+    return geo;
+}
+
+function buildTailFinGeometry(bodyType) {
+    const shape = new THREE.Shape();
+    if (bodyType === 'guppy' || bodyType === 'betta') {
+        const len = bodyType === 'betta' ? 0.68 : 0.62;
+        const h = bodyType === 'betta' ? 0.52 : 0.44;
+        shape.moveTo(0, 0.05);
+        shape.bezierCurveTo(-len * 0.45, h * 0.9, -len * 0.95, h, -len, h * 0.35);
+        shape.bezierCurveTo(-len * 1.08, 0, -len, -h * 0.35, -len, -h * 0.35);
+        shape.bezierCurveTo(-len * 0.95, -h, -len * 0.45, -h * 0.9, 0, -0.05);
+    } else if (bodyType === 'goldfish') {
+        shape.moveTo(0, 0.05);
+        shape.quadraticCurveTo(-0.35, 0.42, -0.68, 0.34);
+        shape.quadraticCurveTo(-0.48, 0.05, -0.45, 0);
+        shape.quadraticCurveTo(-0.48, -0.05, -0.68, -0.34);
+        shape.quadraticCurveTo(-0.35, -0.42, 0, -0.05);
+    } else if (bodyType === 'mola') {
+        shape.moveTo(0, 0.45);
+        shape.bezierCurveTo(-0.18, 0.3, -0.22, 0.1, -0.16, 0);
+        shape.bezierCurveTo(-0.22, -0.1, -0.18, -0.3, 0, -0.45);
+    } else if (bodyType === 'angel' || bodyType === 'tetra' || bodyType === 'tang') {
+        shape.moveTo(0, 0.06);
+        shape.lineTo(-0.38, 0.30);
+        shape.quadraticCurveTo(-0.26, 0, -0.38, -0.30);
+        shape.lineTo(0, -0.06);
+    } else {
+        shape.moveTo(0, 0.07);
+        shape.quadraticCurveTo(-0.25, 0.28, -0.44, 0.22);
+        shape.quadraticCurveTo(-0.48, 0, -0.44, -0.22);
+        shape.quadraticCurveTo(-0.25, -0.28, 0, -0.07);
+    }
+    shape.closePath();
+
+    const geo = new THREE.ShapeGeometry(shape, 16);
+    geo.rotateY(Math.PI / 2);
+    return geo;
+}
+
+function buildDorsalAndAnalFins(bodyType, sz, sy, finMat) {
+    const group = new THREE.Group();
+
+    const dShape = new THREE.Shape();
+    if (bodyType === 'angel') {
+        dShape.moveTo(sz * 0.25, 0);
+        dShape.quadraticCurveTo(-sz * 0.1, sy * 0.8, -sz * 0.45, sy * 1.45);
+        dShape.quadraticCurveTo(-sz * 0.35, sy * 0.4, -sz * 0.55, 0);
+    } else if (bodyType === 'mola') {
+        dShape.moveTo(-sz * 0.15, 0);
+        dShape.lineTo(-sz * 0.38, sy * 0.95);
+        dShape.lineTo(-sz * 0.58, 0);
+    } else if (bodyType === 'lion') {
+        dShape.moveTo(sz * 0.35, 0);
+        for (let s = 0; s < 6; s++) {
+            const xPeak = sz * (0.28 - s * 0.14);
+            const xVal = xPeak - sz * 0.07;
+            dShape.lineTo(xPeak, sy * (0.75 - s * 0.04));
+            dShape.lineTo(xVal, sy * 0.18);
+        }
+        dShape.lineTo(-sz * 0.55, 0);
+    } else if (bodyType === 'betta') {
+        dShape.moveTo(sz * 0.15, 0);
+        dShape.bezierCurveTo(-sz * 0.05, sy * 1.15, -sz * 0.55, sy * 1.15, -sz * 0.72, 0);
+    } else {
+        dShape.moveTo(sz * 0.22, 0);
+        dShape.quadraticCurveTo(-sz * 0.08, sy * 0.72, -sz * 0.48, sy * 0.48);
+        dShape.lineTo(-sz * 0.52, 0);
+    }
+    dShape.closePath();
+    const dGeo = new THREE.ShapeGeometry(dShape, 12);
+    dGeo.rotateY(Math.PI / 2);
+    const dorsal = new THREE.Mesh(dGeo, finMat);
+    dorsal.position.y = sy * 0.76;
+    group.add(dorsal);
+
+    const aShape = new THREE.Shape();
+    if (bodyType === 'angel') {
+        aShape.moveTo(sz * 0.15, 0);
+        aShape.quadraticCurveTo(-sz * 0.15, -sy * 0.85, -sz * 0.48, -sy * 1.5);
+        aShape.quadraticCurveTo(-sz * 0.38, -sy * 0.4, -sz * 0.60, 0);
+    } else if (bodyType === 'mola') {
+        aShape.moveTo(-sz * 0.15, 0);
+        aShape.lineTo(-sz * 0.38, -sy * 0.95);
+        aShape.lineTo(-sz * 0.58, 0);
+    } else if (bodyType === 'betta') {
+        aShape.moveTo(sz * 0.25, 0);
+        aShape.bezierCurveTo(-sz * 0.1, -sy * 1.05, -sz * 0.65, -sy * 1.05, -sz * 0.75, 0);
+    } else {
+        aShape.moveTo(-sz * 0.05, 0);
+        aShape.quadraticCurveTo(-sz * 0.32, -sy * 0.52, -sz * 0.58, -sy * 0.32);
+        aShape.lineTo(-sz * 0.62, 0);
+    }
+    aShape.closePath();
+    const aGeo = new THREE.ShapeGeometry(aShape, 12);
+    aGeo.rotateY(Math.PI / 2);
+    const anal = new THREE.Mesh(aGeo, finMat);
+    anal.position.y = -sy * 0.72;
+    group.add(anal);
+
+    return group;
+}
+
+function createFish3DMesh(fishData) {
+    const species = FISH_SPECIES.find(s => s.id === fishData.speciesId) || FISH_SPECIES[0];
+    const root = new THREE.Group();
+    const texPack = getFishTextures(species, fishData.isShiny);
+
+    const bodyGeo = buildSculptedBodyGeometry(species.bodyType);
+    const { sx, sy, sz } = bodyGeo.userData;
+
+    const bodyMat = new THREE.MeshPhysicalMaterial({
+        map: texPack.bodyTex,
+        bumpMap: texPack.bumpTex,
+        bumpScale: species.bodyType === 'arowana' ? 0.032 : 0.016,
+        roughness: species.bodyType === 'mola' ? 0.55 : 0.24,
+        metalness: fishData.isShiny ? 0.48 : (species.bodyType === 'arowana' ? 0.38 : 0.12),
+        clearcoat: 0.85,
+        clearcoatRoughness: 0.12
+    });
+    const bodyMesh = new THREE.Mesh(bodyGeo, bodyMat);
+    bodyMesh.castShadow = true;
+    bodyMesh.userData = { fishId: fishData.id };
+    root.add(bodyMesh);
+
+    const finMat = new THREE.MeshPhysicalMaterial({
+        map: texPack.finTex,
+        color: 0xffffff,
+        roughness: 0.32,
+        metalness: fishData.isShiny ? 0.3 : 0.05,
+        transparent: true,
+        opacity: species.bodyType === 'mola' ? 0.94 : 0.82,
+        side: THREE.DoubleSide,
+        depthWrite: false
+    });
+
+    const tailPivot = new THREE.Group();
+    tailPivot.position.set(0, 0, -sz * 0.86);
+    const tailGeo = buildTailFinGeometry(species.bodyType);
+    const tailMesh = new THREE.Mesh(tailGeo, finMat);
+    tailPivot.add(tailMesh);
+    if (species.bodyType === 'goldfish') {
+        const tailL = tailMesh.clone();
+        tailL.rotation.y = 0.24;
+        tailL.rotation.z = 0.18;
+        const tailR = tailMesh.clone();
+        tailR.rotation.y = -0.24;
+        tailR.rotation.z = -0.18;
+        tailPivot.remove(tailMesh);
+        tailPivot.add(tailL, tailR);
+    }
+    root.add(tailPivot);
+
+    const verticalFins = buildDorsalAndAnalFins(species.bodyType, sz, sy, finMat);
+    root.add(verticalFins);
+
+    const pecShape = new THREE.Shape();
+    const pecLen = species.bodyType === 'lion' ? 0.58 : (species.bodyType === 'arowana' ? 0.44 : 0.28);
+    pecShape.moveTo(0, 0);
+    pecShape.quadraticCurveTo(-pecLen * 0.6, 0.12, -pecLen, 0.04);
+    pecShape.quadraticCurveTo(-pecLen * 0.8, -0.12, 0, -0.05);
+    pecShape.closePath();
+    const pecGeo = new THREE.ShapeGeometry(pecShape, 8);
+    pecGeo.rotateY(Math.PI / 2);
+
+    const pecLeft = new THREE.Mesh(pecGeo, finMat);
+    pecLeft.position.set(sx * 0.82, -sy * 0.18, sz * 0.24);
+    pecLeft.rotation.set(0.15, 0.35, -0.35);
+
+    const pecRight = new THREE.Mesh(pecGeo, finMat);
+    pecRight.position.set(-sx * 0.82, -sy * 0.18, sz * 0.24);
+    pecRight.rotation.set(0.15, -0.35, 0.35);
+    root.add(pecLeft, pecRight);
+
+    const gillGeo = new THREE.RingGeometry(sy * 0.22, sy * 0.32, 12, 1, -Math.PI * 0.42, Math.PI * 0.84);
+    gillGeo.rotateY(Math.PI / 2);
+    const gillMat = new THREE.MeshStandardMaterial({
+        color: shadeHex(texPack.primary, -55),
+        side: THREE.DoubleSide,
+        roughness: 0.4
+    });
+    const gillLeft = new THREE.Mesh(gillGeo, gillMat);
+    gillLeft.position.set(sx * 0.86, -sy * 0.04, sz * 0.36);
+    const gillRight = new THREE.Mesh(gillGeo, gillMat);
+    gillRight.position.set(-sx * 0.86, -sy * 0.04, sz * 0.36);
+    root.add(gillLeft, gillRight);
+
+    const eyeSize = species.bodyType === 'goldfish' ? 0.088 : 0.068;
+    const irisGeo = new THREE.SphereGeometry(eyeSize, 14, 14);
+    const irisMat = new THREE.MeshStandardMaterial({
+        color: fishData.isShiny ? 0xfde047 : 0xd97706,
+        metalness: 0.6,
+        roughness: 0.2
+    });
+    const pupilGeo = new THREE.SphereGeometry(eyeSize * 0.66, 12, 12);
+    const pupilMat = new THREE.MeshPhysicalMaterial({ color: 0x05080f, roughness: 0.05, clearcoat: 1.0 });
+    const glintGeo = new THREE.SphereGeometry(eyeSize * 0.22, 6, 6);
+    const glintMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+
+    [-1, 1].forEach(side => {
+        const eyeGroup = new THREE.Group();
+        const iris = new THREE.Mesh(irisGeo, irisMat);
+        const pupil = new THREE.Mesh(pupilGeo, pupilMat);
+        pupil.position.x = side * eyeSize * 0.46;
+        const glint = new THREE.Mesh(glintGeo, glintMat);
+        glint.position.set(side * eyeSize * 0.85, eyeSize * 0.28, eyeSize * 0.24);
+        eyeGroup.add(iris, pupil, glint);
+        eyeGroup.position.set(side * sx * 0.64, sy * 0.18, sz * 0.58);
+        root.add(eyeGroup);
+    });
+
+    if (species.bodyType === 'arowana') {
+        const barbelGeo = new THREE.ConeGeometry(0.014, 0.22, 6);
+        barbelGeo.rotateX(Math.PI * 0.38);
+        const barbelMat = new THREE.MeshStandardMaterial({ color: texPack.secondary, metalness: 0.5, roughness: 0.3 });
+        [-1, 1].forEach(side => {
+            const barbel = new THREE.Mesh(barbelGeo, barbelMat);
+            barbel.position.set(side * 0.045, -sy * 0.14, sz * 0.98);
+            barbel.rotation.y = side * 0.28;
+            root.add(barbel);
+        });
+    }
+
+    if (fishData.isShiny) {
+        const auraLight = new THREE.PointLight(0xfde047, 0.7, 2.8);
+        root.add(auraLight);
+    }
+
+    root.position.set(
+        (Math.random() - 0.5) * (TANK_W - 2.6),
+        (Math.random() - 0.5) * (TANK_H - 2.4),
+        (Math.random() - 0.5) * (TANK_D - 2.2)
+    );
+
+    const stageInfo = getFishStageInfo(fishData);
+    root.scale.setScalar(stageInfo.scale);
+
+    fishGroup.add(root);
+    fishMeshes.set(fishData.id, {
+        root,
+        bodyGeo,
+        tailPivot,
+        pecLeft,
+        pecRight,
+        gillLeft,
+        gillRight,
+        species,
+        velocity: new THREE.Vector3((Math.random() - 0.5) * 0.8, 0, (Math.random() - 0.5) * 0.8),
+        targetPos: new THREE.Vector3(
+            (Math.random() - 0.5) * (TANK_W - 2.6),
+            (Math.random() - 0.5) * (TANK_H - 2.4),
+            (Math.random() - 0.5) * (TANK_D - 2.2)
+        ),
+        decisionTimer: Math.random() * 2,
+        swimPhase: Math.random() * Math.PI * 2,
+        currentRoll: 0
+    });
+}
+
+function removeFish3DMesh(fishId) {
+    const entry = fishMeshes.get(fishId);
+    if (entry) {
+        fishGroup.remove(entry.root);
+        fishMeshes.delete(fishId);
+    }
+}
+
+function rebuildDecorations3D() {
+    while (decorGroup.children.length > 0) {
+        decorGroup.remove(decorGroup.children[0]);
+    }
+    const floorY = -TANK_H / 2 + 0.45;
+
+    if (gameState.decorations.includes('driftwood')) {
+        const woodMat = new THREE.MeshStandardMaterial({ color: 0x5c3a21, roughness: 0.9 });
+        const mossMat = new THREE.MeshStandardMaterial({ color: 0x4d7c0f, roughness: 0.85 });
+        const log1 = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.28, 2.4, 8), woodMat);
+        log1.position.set(-2.3, floorY + 0.5, -0.6);
+        log1.rotation.z = -0.85;
+        log1.rotation.y = 0.3;
+        const moss = new THREE.Mesh(new THREE.SphereGeometry(0.32, 8, 8), mossMat);
+        moss.scale.set(1.8, 0.5, 1.2);
+        moss.position.set(-2.1, floorY + 0.72, -0.55);
+        decorGroup.add(log1, moss);
+    }
+
+    if (gameState.decorations.includes('coral_reef')) {
+        const coralColors = [0xf43f5e, 0xfb923c, 0xc084fc];
+        coralColors.forEach((col, i) => {
+            const mat = new THREE.MeshStandardMaterial({ color: col, roughness: 0.65 });
+            for (let b = 0; b < 4; b++) {
+                const branch = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.12, 0.7 + Math.random() * 0.5, 7), mat);
+                branch.position.set(1.8 + i * 0.55 + (Math.random() - 0.5) * 0.3, floorY + 0.3, 0.8 + (Math.random() - 0.5) * 0.5);
+                branch.rotation.set((Math.random() - 0.5) * 0.5, 0, (Math.random() - 0.5) * 0.5);
+                decorGroup.add(branch);
+            }
+        });
+    }
+
+    if (gameState.decorations.includes('castle')) {
+        const stoneMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.8 });
+        const roofMat = new THREE.MeshStandardMaterial({ color: 0x0ea5e9, roughness: 0.5 });
+        const base = new THREE.Mesh(new THREE.BoxGeometry(1.3, 1.1, 1.1), stoneMat);
+        base.position.set(0, floorY + 0.5, -1.3);
+        const tower = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.36, 1.6, 10), stoneMat);
+        tower.position.set(-0.4, floorY + 0.8, -1.3);
+        const roof = new THREE.Mesh(new THREE.ConeGeometry(0.42, 0.65, 10), roofMat);
+        roof.position.set(-0.4, floorY + 1.9, -1.3);
+        decorGroup.add(base, tower, roof);
+    }
+
+    if (gameState.decorations.includes('crystal')) {
+        const crysMat = new THREE.MeshPhysicalMaterial({
+            color: 0x22d3ee,
+            emissive: 0x0891b2,
+            emissiveIntensity: 0.65,
+            roughness: 0.15,
+            transparent: true,
+            opacity: 0.88
+        });
+        for (let c = 0; c < 5; c++) {
+            const h = 0.6 + Math.random() * 0.9;
+            const shard = new THREE.Mesh(new THREE.ConeGeometry(0.14, h, 5), crysMat);
+            shard.position.set(2.4 + (Math.random() - 0.5) * 0.7, floorY + h / 2 - 0.1, -1.4 + (Math.random() - 0.5) * 0.6);
+            shard.rotation.set((Math.random() - 0.5) * 0.45, Math.random() * 3, (Math.random() - 0.5) * 0.45);
+            decorGroup.add(shard);
+        }
+        const crysLight = new THREE.PointLight(0x22d3ee, 1.1, 5);
+        crysLight.position.set(2.4, floorY + 0.8, -1.4);
+        decorGroup.add(crysLight);
+    }
+}
+
+// 6. 遊戲邏輯與動畫迴圈
+const clock = new THREE.Clock();
+let passiveIncomeTimer = 0;
+let autoSaveTimer = 0;
+
+function getMaxCapacity() {
+    return 8 + (gameState.tankLevel - 1) * 4;
+}
+
+function getFishStageInfo(fish) {
+    const species = FISH_SPECIES.find(s => s.id === fish.speciesId) || FISH_SPECIES[0];
+    const ratio = Math.min(1, fish.growth / species.growthTime);
+    if (ratio < 0.35) {
+        return { stage: 'fry', label: '魚苗', scale: 0.48 + (ratio / 0.35) * 0.24, progress: Math.floor(ratio * 100), isAdult: false };
+    } else if (ratio < 1.0) {
+        return { stage: 'juvenile', label: '幼魚', scale: 0.72 + ((ratio - 0.35) / 0.65) * 0.28, progress: Math.floor(ratio * 100), isAdult: false };
+    } else {
+        return { stage: 'adult', label: '成魚 ✨', scale: 1.08, progress: 100, isAdult: true };
+    }
+}
+
+function getFishSellValue(fish) {
+    const species = FISH_SPECIES.find(s => s.id === fish.speciesId) || FISH_SPECIES[0];
+    const stageInfo = getFishStageInfo(fish);
+    let mult = stageInfo.stage === 'fry' ? 0.5 : (stageInfo.stage === 'juvenile' ? 1.0 : 1.85);
+    if (fish.isShiny) mult *= 2.5;
+    return Math.round(species.basePrice * mult);
+}
+
+function getFishPassiveIncome(fish) {
+    const species = FISH_SPECIES.find(s => s.id === fish.speciesId) || FISH_SPECIES[0];
+    const stageInfo = getFishStageInfo(fish);
+    if (!stageInfo.isAdult) return 0;
+    let rate = species.passiveRate;
+    if (fish.isShiny) rate *= 2;
+    if (gameState.decorations.includes('castle')) rate = Math.ceil(rate * 1.2);
+    return rate;
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+    const rawDt = Math.min(clock.getDelta(), 0.05);
+    const dt = rawDt * timeScale;
+    const elapsed = clock.getElapsedTime();
+
+    if (waterSurfaceMesh) {
+        const pos = waterSurfaceMesh.geometry.attributes.position;
+        for (let i = 0; i < pos.count; i++) {
+            const x = pos.getX(i);
+            const z = pos.getZ(i);
+            pos.setY(i, Math.sin(x * 1.4 + elapsed * 1.8) * 0.04 + Math.cos(z * 1.4 + elapsed * 1.5) * 0.04);
+        }
+        pos.needsUpdate = true;
+    }
+
+    if (sandCausticsMesh && sandCausticsMesh.material.map) {
+        sandCausticsMesh.material.map.offset.x = Math.sin(elapsed * 0.35) * 0.25;
+        sandCausticsMesh.material.map.offset.y = elapsed * 0.06;
+    }
+    godRays.forEach(r => {
+        r.mesh.rotation.z = -0.12 + Math.sin(elapsed * 0.7 + r.phase) * 0.045;
+        r.mesh.material.opacity = 0.045 + Math.sin(elapsed * 1.2 + r.phase) * 0.015;
+    });
+
+    seaweeds.forEach(sw => {
+        sw.group.rotation.z = Math.sin(elapsed * sw.speed + sw.phase) * 0.14;
+        sw.group.rotation.x = Math.cos(elapsed * sw.speed * 0.8 + sw.phase) * 0.08;
+    });
+
+    bubbles.forEach(b => {
+        b.mesh.position.y += b.speed * dt;
+        b.mesh.position.x += Math.sin(elapsed * 3 + b.wobbleOffset) * 0.25 * dt;
+        if (b.mesh.position.y > TANK_H / 2 - 0.4) {
+            resetBubble(b.mesh, false);
+        }
+    });
+
+    for (let i = foodPellets.length - 1; i >= 0; i--) {
+        const p = foodPellets[i];
+        p.mesh.position.y += p.vy * dt;
+        p.mesh.position.x += Math.sin(elapsed * 4 + p.wobble) * 0.15 * dt;
+        if (p.mesh.position.y <= -TANK_H / 2 + 0.38) {
+            p.mesh.position.y = -TANK_H / 2 + 0.38;
+            p.vy = 0;
+            p.life = (p.life || 4.0) - dt;
+            if (p.life <= 0) {
+                foodGroup.remove(p.mesh);
+                foodPellets.splice(i, 1);
+            }
+        }
+    }
+
+    const decorGrowthMult = gameState.decorations.includes('coral_reef') ? 1.15 : 1.0;
+
+    gameState.fishes.forEach(fish => {
+        const entry = fishMeshes.get(fish.id);
+        if (!entry) return;
+
+        fish.hunger = Math.max(0, fish.hunger - dt * 0.65);
+        const hungerSpeedMult = fish.hunger > 20 ? 1.0 : 0.35;
+        fish.growth += dt * hungerSpeedMult * decorGrowthMult;
+
+        const stageInfo = getFishStageInfo(fish);
+        entry.root.scale.lerp(new THREE.Vector3(stageInfo.scale, stageInfo.scale, stageInfo.scale), 0.08);
+
+        let nearestFood = null;
+        let minDist = 999;
+        if (fish.hunger < 96 && foodPellets.length > 0) {
+            foodPellets.forEach(p => {
+                const d = entry.root.position.distanceTo(p.mesh.position);
+                if (d < minDist) {
+                    minDist = d;
+                    nearestFood = p;
+                }
+            });
+        }
+
+        let baseSpeed = entry.species.bodyType === 'mola' ? 0.75 : (entry.species.bodyType === 'lion' ? 0.9 : 1.32);
+        if (nearestFood) {
+            entry.targetPos.copy(nearestFood.mesh.position);
+            baseSpeed *= 1.75;
+
+            if (minDist < 0.58) {
+                fish.hunger = Math.min(100, fish.hunger + nearestFood.nutrition);
+                fish.growth += 4.5 * nearestFood.growthBonus;
+                const idx = foodPellets.indexOf(nearestFood);
+                if (idx > -1) {
+                    foodGroup.remove(nearestFood.mesh);
+                    foodPellets.splice(idx, 1);
+                }
+                sound.playEatPop();
+            }
+        } else {
+            entry.decisionTimer -= dt;
+            if (entry.decisionTimer <= 0 || entry.root.position.distanceTo(entry.targetPos) < 0.75) {
+                entry.targetPos.set(
+                    (Math.random() - 0.5) * (TANK_W - 2.3),
+                    (Math.random() - 0.5) * (TANK_H - 2.3),
+                    (Math.random() - 0.5) * (TANK_D - 1.9)
+                );
+                entry.decisionTimer = 2.4 + Math.random() * 3.6;
+            }
+        }
+
+        const dir = new THREE.Vector3().subVectors(entry.targetPos, entry.root.position);
+        const dist = dir.length();
+        const currentSpeed = entry.velocity.length();
+
+        if (dist > 0.05 && dt > 0) {
+            dir.normalize();
+            const desiredSpeed = dist < 1.1 && !nearestFood ? baseSpeed * 0.45 : baseSpeed;
+            entry.velocity.lerp(dir.multiplyScalar(desiredSpeed), Math.min(1, 0.045 * Math.max(1, timeScale * 0.4)));
+            entry.root.position.addScaledVector(entry.velocity, dt);
+
+            const forward = new THREE.Vector3(0, 0, 1).applyQuaternion(entry.root.quaternion);
+            const crossY = forward.x * dir.z - forward.z * dir.x;
+            const targetRoll = THREE.MathUtils.clamp(crossY * 0.55, -0.35, 0.35);
+            entry.currentRoll = THREE.MathUtils.lerp(entry.currentRoll, targetRoll, 0.08);
+
+            const lookTarget = entry.root.position.clone().add(entry.velocity);
+            const dummy = new THREE.Object3D();
+            dummy.position.copy(entry.root.position);
+            dummy.lookAt(lookTarget);
+            dummy.rotateZ(entry.currentRoll);
+            entry.root.quaternion.slerp(dummy.quaternion, 0.075);
+        }
+
+        const visualSpeedFactor = timeScale === 0 ? 0.2 : Math.min(2.5, Math.sqrt(timeScale));
+        const swimFreq = (nearestFood ? 14.5 : (5.5 + currentSpeed * 3.2)) * visualSpeedFactor;
+        const phase = elapsed * swimFreq + entry.swimPhase;
+        const waveAmp = (entry.species.bodyType === 'mola' ? 0.025 : 0.055) * (0.6 + currentSpeed * 0.45);
+
+        const posAttr = entry.bodyGeo.attributes.position;
+        const { baseX, baseZ, halfLen } = entry.bodyGeo.userData;
+        for (let i = 0; i < posAttr.count; i++) {
+            const z = baseZ[i];
+            const normPos = THREE.MathUtils.clamp((halfLen - z) / (halfLen * 2), 0, 1);
+            const bend = Math.sin(phase - normPos * 3.2) * Math.pow(normPos, 1.65) * waveAmp;
+            posAttr.setX(i, baseX[i] + bend);
+        }
+        posAttr.needsUpdate = true;
+
+        const tailAngle = Math.sin(phase - 3.6) * (nearestFood ? 0.55 : 0.36);
+        entry.tailPivot.rotation.y = tailAngle;
+        entry.tailPivot.position.x = Math.sin(phase - 3.2) * waveAmp;
+
+        const pecFreq = (nearestFood ? 12.0 : 4.8) * visualSpeedFactor;
+        const pecSwing = Math.sin(elapsed * pecFreq + entry.swimPhase) * 0.38;
+        entry.pecLeft.rotation.y = 0.25 + pecSwing;
+        entry.pecRight.rotation.y = -0.25 - pecSwing;
+
+        const gillBreath = (Math.sin(elapsed * 3.6 * visualSpeedFactor + entry.swimPhase) + 1) * 0.045;
+        entry.gillLeft.rotation.y = gillBreath;
+        entry.gillRight.rotation.y = -gillBreath;
+    });
+
+    passiveIncomeTimer += dt;
+    if (passiveIncomeTimer >= 10) {
+        const cycles = Math.floor(passiveIncomeTimer / 10);
+        passiveIncomeTimer %= 10;
+        for (let c = 0; c < cycles; c++) {
+            grantPassiveIncome();
+        }
+    }
+
+    if (selectedFishId) {
+        updateInspectorLive();
+    }
+
+    autoSaveTimer += rawDt;
+    if (autoSaveTimer >= 10) {
+        autoSaveTimer = 0;
+        saveGame();
+    }
+
+    renderer.render(scene, camera);
+}
+
+// 7. 攝影機控制與畫布點擊互動
+function setupControls(domElement) {
+    domElement.addEventListener('pointerdown', (e) => {
+        isDragging = true;
+        dragMoved = false;
+        prevPointer = { x: e.clientX, y: e.clientY };
+    });
+
+    window.addEventListener('pointermove', (e) => {
+        if (!isDragging) return;
+        const dx = e.clientX - prevPointer.x;
+        const dy = e.clientY - prevPointer.y;
+        if (Math.abs(dx) > 4 || Math.abs(dy) > 4) dragMoved = true;
+        camTheta -= dx * 0.0065;
+        camPhi = Math.max(0.45, Math.min(Math.PI * 0.58, camPhi - dy * 0.0065));
+        updateCameraPosition();
+        prevPointer = { x: e.clientX, y: e.clientY };
+    });
+
+    window.addEventListener('pointerup', (e) => {
+        if (isDragging && !dragMoved && e.target === domElement) {
+            handleCanvasTap(e.clientX, e.clientY);
+        }
+        isDragging = false;
+    });
+
+    domElement.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        camRadius = Math.max(8.5, Math.min(23, camRadius + e.deltaY * 0.01));
+        updateCameraPosition();
+    }, { passive: false });
+}
+
+function handleCanvasTap(clientX, clientY) {
+    const rect = renderer.domElement.getBoundingClientRect();
+    pointerNDC.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+    pointerNDC.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+
+    raycaster.setFromCamera(pointerNDC, camera);
+
+    const fishHits = raycaster.intersectObjects(fishGroup.children, true);
+    if (fishHits.length > 0) {
+        let obj = fishHits[0].object;
+        while (obj && !obj.userData?.fishId) {
+            obj = obj.parent;
+        }
+        if (obj && obj.userData?.fishId) {
+            openFishInspector(obj.userData.fishId);
+            return;
+        }
+    }
+
+    if (selectedFishId) {
+        closeInspector();
+    }
+
+    const hitPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+    const targetPoint = new THREE.Vector3();
+    if (raycaster.ray.intersectPlane(hitPlane, targetPoint)) {
+        const fx = THREE.MathUtils.clamp(targetPoint.x, -TANK_W / 2 + 0.8, TANK_W / 2 - 0.8);
+        const fy = THREE.MathUtils.clamp(Math.max(targetPoint.y, 0.5), -TANK_H / 2 + 1.5, TANK_H / 2 - 0.5);
+        const fz = THREE.MathUtils.clamp((Math.random() - 0.5) * (TANK_D - 1.6), -TANK_D / 2 + 0.8, TANK_D / 2 - 0.8);
+        spawnFoodPellet(fx, fy, fz);
+    }
+}
+
+function spawnFoodPellet(x, y, z) {
+    if (foodPellets.length >= 22) {
+        const oldest = foodPellets.shift();
+        foodGroup.remove(oldest.mesh);
+    }
+    const foodColors = [0xd97706, 0x10b981, 0xec4899, 0xfbbf24];
+    const col = foodColors[Math.min(gameState.foodLevel - 1, foodColors.length - 1)];
+    const geo = new THREE.SphereGeometry(0.085, 8, 8);
+    const mat = new THREE.MeshStandardMaterial({ color: col, roughness: 0.4 });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(x, y, z);
+    foodGroup.add(mesh);
+
+    foodPellets.push({
+        mesh,
+        vy: -0.65 - Math.random() * 0.25,
+        wobble: Math.random() * Math.PI * 2,
+        nutrition: 25 + (gameState.foodLevel - 1) * 10,
+        growthBonus: 1 + (gameState.foodLevel - 1) * 0.35
+    });
+    sound.playWaterDrop();
+}
+
+// 8. 經濟系統、收益、互動提示
+function grantPassiveIncome() {
+    let total = 0;
+    gameState.fishes.forEach(fish => {
+        const inc = getFishPassiveIncome(fish);
+        if (inc > 0) {
+            total += inc;
+            const entry = fishMeshes.get(fish.id);
+            if (entry && !isZenMode) {
+                spawnFloatingCoinText(entry.root.position, `+${inc}`);
+            }
+        }
+    });
+    if (total > 0) {
+        gameState.coins += total;
+        updateHUD();
+    }
+}
+
+function spawnFloatingCoinText(worldPos, text) {
+    const projected = worldPos.clone().project(camera);
+    const x = (projected.x * 0.5 + 0.5) * window.innerWidth;
+    const y = (-(projected.y * 0.5) + 0.5) * window.innerHeight;
+    if (x < 0 || x > window.innerWidth || y < 0 || y > window.innerHeight) return;
+
+    const el = document.createElement('div');
+    el.className = 'coin-float fixed text-xs sm:text-sm font-bold text-amber-300 drop-shadow';
+    el.style.left = `${x}px`;
+    el.style.top = `${y - 16}px`;
+    el.textContent = `🪙 ${text}`;
+    document.getElementById('floating-texts').appendChild(el);
+    setTimeout(() => el.remove(), 1300);
+}
+
+function showToast(msg) {
+    const toast = document.getElementById('toast-msg');
+    document.getElementById('toast-text').textContent = msg;
+    toast.classList.remove('opacity-0');
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => toast.classList.add('opacity-0'), 2200);
+}
+
+function updateHUD() {
+    document.getElementById('hud-coins').textContent = gameState.coins.toLocaleString();
+    document.getElementById('hud-capacity').textContent = `${gameState.fishes.length} / ${getMaxCapacity()}`;
+    let totalIncome = 0;
+    gameState.fishes.forEach(f => totalIncome += getFishPassiveIncome(f));
+    document.getElementById('hud-income').textContent = `+${totalIncome} / 10秒`;
+}
+
+// 9. UI 面板互動
+function setLighting(mode) {
+    gameState.lighting = mode;
+    ['day', 'sunset', 'night'].forEach(m => {
+        const btn = document.getElementById(`btn-light-${m}`);
+        if (m === mode) {
+            btn.classList.add('bg-cyan-500/30', 'text-white');
+            btn.classList.remove('text-slate-300');
+        } else {
+            btn.classList.remove('bg-cyan-500/30', 'text-white');
+            btn.classList.add('text-slate-300');
+        }
+    });
+
+    if (mode === 'day') {
+        scene.background.set('#081726');
+        scene.fog.color.set('#081726');
+        ambientLight.color.set('#bae6fd');
+        ambientLight.intensity = 0.85;
+        dirLight.color.set('#ffffff');
+        dirLight.intensity = 1.15;
+        pointLight1.color.set('#38bdf8');
+        pointLight2.color.set('#f472b6');
+    } else if (mode === 'sunset') {
+        scene.background.set('#1f1226');
+        scene.fog.color.set('#1f1226');
+        ambientLight.color.set('#fdba74');
+        ambientLight.intensity = 0.78;
+        dirLight.color.set('#fb923c');
+        dirLight.intensity = 1.1;
+        pointLight1.color.set('#f43f5e');
+        pointLight2.color.set('#fbbf24');
+    } else if (mode === 'night') {
+        scene.background.set('#030812');
+        scene.fog.color.set('#030812');
+        ambientLight.color.set('#1e3a8a');
+        ambientLight.intensity = 0.65;
+        dirLight.color.set('#38bdf8');
+        dirLight.intensity = 0.65;
+        pointLight1.color.set('#22d3ee');
+        pointLight2.color.set('#a855f7');
+    }
+    saveGame();
+}
+
+function toggleMute() {
+    gameState.muted = !gameState.muted;
+    document.getElementById('mute-btn').textContent = gameState.muted ? '🔇' : '🔊';
+    if (!gameState.muted) sound.playWaterDrop();
+    saveGame();
+}
+
+function toggleZenMode() {
+    isZenMode = !isZenMode;
+    const ids = ['top-hud', 'bottom-nav', 'hint-pill', 'right-dock'];
+    ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (isZenMode) el.classList.add('ui-hidden');
+        else el.classList.remove('ui-hidden');
+    });
+    if (isZenMode) closeInspector();
+    document.getElementById('restore-ui-btn').classList.toggle('hidden', !isZenMode);
+}
+
+function setTimeScale(val) {
+    timeScale = parseFloat(val);
+    const slider = document.getElementById('time-speed-slider');
+    const display = document.getElementById('speed-display');
+    if (slider) slider.value = timeScale;
+    if (display) {
+        display.textContent = timeScale === 0 ? '⏸ 暫停' : `${timeScale.toFixed(1)}x`;
+    }
+}
+
+function closeOfflineReport() {
+    const card = document.getElementById('offline-events-card');
+    if (card) card.classList.add('hidden');
+}
+
+function openFishInspector(fishId) {
+    selectedFishId = fishId;
+    closeOfflineReport();
+    const insp = document.getElementById('fish-inspector');
+    insp.classList.remove('hidden');
+    updateInspectorLive();
+}
+
+function closeInspector() {
+    selectedFishId = null;
+    document.getElementById('fish-inspector').classList.add('hidden');
+}
+
+function updateInspectorLive() {
+    const fish = gameState.fishes.find(f => f.id === selectedFishId);
+    if (!fish) {
+        closeInspector();
+        return;
+    }
+    const species = FISH_SPECIES.find(s => s.id === fish.speciesId) || FISH_SPECIES[0];
+    const stageInfo = getFishStageInfo(fish);
+    const rarity = RARITY_STYLES[species.rarity];
+
+    document.getElementById('insp-icon').textContent = species.icon;
+    const nameInput = document.getElementById('insp-name-input');
+    if (document.activeElement !== nameInput) {
+        nameInput.value = fish.name;
+    }
+    document.getElementById('insp-shiny-badge').classList.toggle('hidden', !fish.isShiny);
+    document.getElementById('insp-species').textContent = `${species.name} • ${rarity.label}`;
+    document.getElementById('insp-stage').textContent = stageInfo.label;
+    document.getElementById('insp-growth-pct').textContent = `${stageInfo.progress}%`;
+    document.getElementById('insp-growth-bar').style.width = `${stageInfo.progress}%`;
+
+    const hungerPct = Math.round(fish.hunger);
+    document.getElementById('insp-hunger-pct').textContent = `${hungerPct}%`;
+    document.getElementById('insp-hunger-bar').style.width = `${hungerPct}%`;
+
+    const passive = getFishPassiveIncome(fish);
+    document.getElementById('insp-passive').textContent = stageInfo.isAdult ? `+${passive} 🪙/10s` : `成魚後開啟`;
+
+    const lockBtn = document.getElementById('insp-lock-btn');
+    lockBtn.innerHTML = fish.locked ? `<span>🔒</span> <span class="text-amber-300">已上鎖</span>` : `<span>🔓</span> <span>未上鎖</span>`;
+
+    const sellBtn = document.getElementById('insp-sell-btn');
+    const sellPrice = getFishSellValue(fish);
+    document.getElementById('insp-sell-price').textContent = fish.locked ? '已保護' : `出售 ${sellPrice}`;
+    sellBtn.disabled = fish.locked;
+    sellBtn.classList.toggle('opacity-40', fish.locked);
+}
+
+function renameSelectedFish(newName) {
+    const fish = gameState.fishes.find(f => f.id === selectedFishId);
+    if (fish && newName.trim()) {
+        fish.name = newName.trim();
+        saveGame();
+        showToast(`已將魚兒命名為「${fish.name}」`);
+    }
+}
+
+function toggleLockSelectedFish() {
+    const fish = gameState.fishes.find(f => f.id === selectedFishId);
+    if (fish) {
+        fish.locked = !fish.locked;
+        updateInspectorLive();
+        saveGame();
+    }
+}
+
+function sellSelectedFish() {
+    const idx = gameState.fishes.findIndex(f => f.id === selectedFishId);
+    if (idx === -1) return;
+    const fish = gameState.fishes[idx];
+    if (fish.locked) {
+        showToast('這隻魚已上鎖，請先解鎖再出售');
+        return;
+    }
+    const price = getFishSellValue(fish);
+    gameState.coins += price;
+    gameState.fishes.splice(idx, 1);
+    removeFish3DMesh(fish.id);
+    closeInspector();
+    updateHUD();
+    sound.playCoinChime();
+    showToast(`出售「${fish.name}」獲得 ${price} 金幣！`);
+    saveGame();
+}
+
+function openModal(tab) {
+    currentModalTab = tab;
+    const overlay = document.getElementById('modal-overlay');
+    overlay.classList.remove('hidden');
+    renderModalContent();
+}
+
+function closeModal() {
+    currentModalTab = null;
+    document.getElementById('modal-overlay').classList.add('hidden');
+}
+
+function renderModalContent() {
+    const titleEl = document.getElementById('modal-title');
+    const iconEl = document.getElementById('modal-icon');
+    const bodyEl = document.getElementById('modal-body');
+
+    if (currentModalTab === 'shop') {
+        iconEl.textContent = '🛍️';
+        titleEl.textContent = '魚苗商店 (培育開箱)';
+        bodyEl.innerHTML = `
+            <div class="text-xs text-cyan-200/80 bg-cyan-500/10 border border-cyan-400/20 p-3 rounded-2xl">
+                💡 購買魚苗包後會立即放入水族箱，每隻魚都有機率誕生為稀有的 <strong>「✨ 異色變異 (Shiny)」</strong>，擁有雙倍收益與專屬金光！
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                ${SEED_PACKS.map(pack => `
+                    <div class="glass-light rounded-2xl p-4 flex flex-col justify-between">
+                        <div>
+                            <div class="text-3xl mb-2">${pack.icon}</div>
+                            <h3 class="font-bold text-sm text-white">${pack.name}</h3>
+                            <p class="text-xs text-slate-300 mt-1 leading-relaxed">${pack.desc}</p>
+                            <div class="mt-3 flex flex-wrap gap-1">
+                                ${pack.pool.map(item => {
+                                    const sp = FISH_SPECIES.find(s => s.id === item.id);
+                                    return `<span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-800/80 text-cyan-200">${sp.icon} ${sp.name}</span>`;
+                                }).join('')}
+                            </div>
+                        </div>
+                        <button onclick="buySeedPack('${pack.id}')" class="mt-4 w-full py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-slate-950 font-bold text-xs shadow-md transition">
+                            🪙 ${pack.price} 購買魚苗
+                        </button>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    } else if (currentModalTab === 'upgrades') {
+        iconEl.textContent = '⚙️';
+        titleEl.textContent = '水族設備升級';
+        const tankCost = gameState.tankLevel * 180;
+        const foodCost = gameState.foodLevel * 140;
+        const maxFood = gameState.foodLevel >= 4;
+        bodyEl.innerHTML = `
+            <div class="space-y-3">
+                <div class="glass-light rounded-2xl p-4 flex items-center justify-between gap-3">
+                    <div>
+                        <div class="text-sm font-bold text-white">🐠 擴建水族箱空間 (Lv.${gameState.tankLevel})</div>
+                        <div class="text-xs text-slate-300 mt-1">目前最大容量 ${getMaxCapacity()} 隻魚 → 升級後可容納 ${getMaxCapacity() + 4} 隻魚</div>
+                    </div>
+                    <button onclick="upgradeTank()" class="shrink-0 px-4 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs transition">
+                        🪙 ${tankCost} 升級
+                    </button>
+                </div>
+                <div class="glass-light rounded-2xl p-4 flex items-center justify-between gap-3">
+                    <div>
+                        <div class="text-sm font-bold text-white">🍤 營養飼料配方 (Lv.${gameState.foodLevel} / 4)</div>
+                        <div class="text-xs text-slate-300 mt-1">提升每次投餵的飽食度恢復與魚苗成長推進速度</div>
+                    </div>
+                    ${maxFood
+                        ? `<span class="px-3 py-2 rounded-xl bg-emerald-500/20 text-emerald-300 text-xs font-bold">已達最高級</span>`
+                        : `<button onclick="upgradeFood()" class="shrink-0 px-4 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs transition">🪙 ${foodCost} 升級</button>`
+                    }
+                </div>
+            </div>
+        `;
+    } else if (currentModalTab === 'decor') {
+        iconEl.textContent = '🪸';
+        titleEl.textContent = '都市水族造景與生態加成';
+        bodyEl.innerHTML = `
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                ${DECORATIONS.map(dec => {
+                    const owned = gameState.decorations.includes(dec.id);
+                    return `
+                        <div class="glass-light rounded-2xl p-4 flex flex-col justify-between">
+                            <div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-3xl">${dec.icon}</span>
+                                    ${owned ? '<span class="text-xs px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 font-semibold">已擺設於缸中</span>' : ''}
+                                </div>
+                                <h3 class="font-bold text-sm text-white mt-2">${dec.name}</h3>
+                                <p class="text-xs text-cyan-200/80 mt-1">✨ 效果：${dec.bonusText}</p>
+                            </div>
+                            ${owned
+                                ? `<button disabled class="mt-3 w-full py-2 rounded-xl bg-white/5 text-slate-400 text-xs">已擁有</button>`
+                                : `<button onclick="buyDecoration('${dec.id}')" class="mt-3 w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-300 hover:to-teal-400 text-slate-950 font-bold text-xs transition">🪙 ${dec.price} 購買擺設</button>`
+                            }
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        `;
+    } else if (currentModalTab === 'dex') {
+        iconEl.textContent = '📖';
+        titleEl.textContent = `魚類收藏圖鑑 (${gameState.discovered.length} / ${FISH_SPECIES.length})`;
+        bodyEl.innerHTML = `
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                ${FISH_SPECIES.map(sp => {
+                    const found = gameState.discovered.includes(sp.id);
+                    const shinyFound = gameState.shinyDiscovered.includes(sp.id);
+                    const rarity = RARITY_STYLES[sp.rarity];
+                    return `
+                        <div class="glass-light rounded-2xl p-3.5 flex items-start gap-3 ${found ? '' : 'opacity-50'}">
+                            <div class="w-12 h-12 rounded-2xl bg-slate-900/70 flex items-center justify-center text-2xl shrink-0 border border-white/10">
+                                ${found ? sp.icon : '❓'}
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-1.5 flex-wrap">
+                                    <span class="font-bold text-sm text-white">${found ? sp.name : '未知魚種'}</span>
+                                    <span class="text-[10px] px-1.5 py-0.5 rounded border ${rarity.bg} ${rarity.color}">${rarity.label}</span>
+                                    ${shinyFound ? '<span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-400/20 text-amber-300">✨ 已收集異色</span>' : ''}
+                                </div>
+                                <p class="text-xs text-slate-300 mt-1 leading-relaxed">${found ? sp.desc : '購買魚苗包以解鎖此魚種資料。'}</p>
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        `;
+    }
+}
+
+function buySeedPack(packId) {
+    const pack = SEED_PACKS.find(p => p.id === packId);
+    if (!pack) return;
+    if (gameState.fishes.length >= getMaxCapacity()) {
+        showToast('魚缸已滿！請先出售成魚或升級魚缸容量');
+        return;
+    }
+    if (gameState.coins < pack.price) {
+        showToast('療癒金幣不足！點選畫面餵魚或等待成魚產出金幣');
+        return;
+    }
+
+    gameState.coins -= pack.price;
+
+    const totalWeight = pack.pool.reduce((acc, item) => acc + item.weight, 0);
+    let r = Math.random() * totalWeight;
+    let chosenId = pack.pool[0].id;
+    for (const item of pack.pool) {
+        if (r < item.weight) {
+            chosenId = item.id;
+            break;
+        }
+        r -= item.weight;
+    }
+
+    const shinyChance = gameState.decorations.includes('crystal') ? 0.22 : 0.12;
+    const isShiny = Math.random() < shinyChance;
+
+    const newFish = addFishToTank(chosenId, isShiny);
+    const sp = FISH_SPECIES.find(s => s.id === chosenId);
+
+    sound.playCoinChime();
+    updateHUD();
+    saveGame();
+    closeModal();
+    showToast(isShiny ? `✨ 奇蹟誕生！獲得異色「${sp.name}」！` : `🌱 歡迎新成員「${sp.name}」加入水族箱！`);
+    openFishInspector(newFish.id);
+}
+
+function addFishToTank(speciesId, isShiny = false, customName = null) {
+    const sp = FISH_SPECIES.find(s => s.id === speciesId) || FISH_SPECIES[0];
+    const fishObj = {
+        id: 'fish_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+        speciesId: sp.id,
+        name: customName || sp.name,
+        growth: 0,
+        hunger: 85,
+        isShiny: isShiny,
+        locked: false
+    };
+    gameState.fishes.push(fishObj);
+    if (!gameState.discovered.includes(sp.id)) gameState.discovered.push(sp.id);
+    if (isShiny && !gameState.shinyDiscovered.includes(sp.id)) gameState.shinyDiscovered.push(sp.id);
+    createFish3DMesh(fishObj);
+    return fishObj;
+}
+
+function upgradeTank() {
+    const cost = gameState.tankLevel * 180;
+    if (gameState.coins < cost) {
+        showToast('金幣不足，無法擴建水族箱');
+        return;
+    }
+    gameState.coins -= cost;
+    gameState.tankLevel++;
+    sound.playCoinChime();
+    updateHUD();
+    renderModalContent();
+    saveGame();
+    showToast(`水族箱擴建至 Lv.${gameState.tankLevel}！`);
+}
+
+function upgradeFood() {
+    if (gameState.foodLevel >= 4) return;
+    const cost = gameState.foodLevel * 140;
+    if (gameState.coins < cost) {
+        showToast('金幣不足，無法升級飼料');
+        return;
+    }
+    gameState.coins -= cost;
+    gameState.foodLevel++;
+    sound.playCoinChime();
+    updateHUD();
+    renderModalContent();
+    saveGame();
+    showToast(`飼料配方升級至 Lv.${gameState.foodLevel}！`);
+}
+
+function buyDecoration(decorId) {
+    const dec = DECORATIONS.find(d => d.id === decorId);
+    if (!dec || gameState.decorations.includes(decorId)) return;
+    if (gameState.coins < dec.price) {
+        showToast('金幣不足，無法購買此造景');
+        return;
+    }
+    gameState.coins -= dec.price;
+    gameState.decorations.push(decorId);
+    rebuildDecorations3D();
+    sound.playCoinChime();
+    updateHUD();
+    renderModalContent();
+    saveGame();
+    showToast(`已擺設「${dec.name}」！`);
+}
+
+// 10. 本地存檔載入與離線生態模擬系統
+function formatOfflineDuration(seconds) {
+    if (seconds < 60) return `${Math.floor(seconds)} 秒`;
+    const mins = Math.floor(seconds / 60);
+    if (mins < 60) return `${mins} 分鐘`;
+    const hrs = Math.floor(mins / 60);
+    const remMins = mins % 60;
+    if (hrs < 24) return `${hrs} 小時 ${remMins} 分鐘`;
+    const days = Math.floor(hrs / 24);
+    const remHrs = hrs % 24;
+    return `${days} 天 ${remHrs} 小時`;
+}
+
+function simulateOfflineProgress(offlineSec) {
+    const effectiveSec = Math.min(offlineSec, 604800);
+    if (effectiveSec < 15 || gameState.fishes.length === 0) return;
+
+    const events = [];
+    const decorGrowthMult = gameState.decorations.includes('coral_reef') ? 1.15 : 1.0;
+    let totalOfflineCoins = 0;
+    const offlineGrowthMult = 0.55 * decorGrowthMult;
+
+    gameState.fishes.forEach(fish => {
+        const species = FISH_SPECIES.find(s => s.id === fish.speciesId) || FISH_SPECIES[0];
+        const beforeStage = getFishStageInfo(fish);
+        const wasAdult = beforeStage.isAdult;
+
+        fish.growth += effectiveSec * offlineGrowthMult;
+        fish.hunger = Math.max(25, fish.hunger - effectiveSec * 0.05);
+
+        const afterStage = getFishStageInfo(fish);
+
+        if (beforeStage.stage === 'fry' && afterStage.stage === 'juvenile') {
+            events.push(`🌱 「${fish.name}」(${species.name}) 茁壯成長為幼魚了！`);
+        } else if (!wasAdult && afterStage.isAdult) {
+            events.push(`🎉 「${fish.name}」(${species.name}) 已完全長成成魚，開始產出療癒金幣！`);
+        }
+
+        const cycles = Math.floor(effectiveSec / 10);
+        if (cycles > 0) {
+            if (wasAdult) {
+                totalOfflineCoins += getFishPassiveIncome(fish) * cycles * 0.6;
+            } else if (afterStage.isAdult) {
+                totalOfflineCoins += getFishPassiveIncome(fish) * Math.floor(cycles * 0.4) * 0.6;
+            }
+        }
+    });
+
+    const earnedCoins = Math.floor(totalOfflineCoins);
+    if (earnedCoins > 0) {
+        gameState.coins += earnedCoins;
+        events.unshift(`🪙 魚群在您離開期間共為您累積了 ${earnedCoins} 金幣！`);
+    }
+
+    if (events.length === 0) {
+        events.push(`💧 魚群在水族箱裡悠閒游動，一切安好，成長進度持續推進中。`);
+    }
+
+    const card = document.getElementById('offline-events-card');
+    const durBadge = document.getElementById('offline-duration-badge');
+    const listEl = document.getElementById('offline-events-list');
+    if (card && durBadge && listEl) {
+        durBadge.textContent = `離線經過：${formatOfflineDuration(effectiveSec)}`;
+        listEl.innerHTML = events.map(ev => `<li class="bg-black/25 px-2.5 py-2 rounded-xl border border-white/5 leading-relaxed">${ev}</li>`).join('');
+        card.classList.remove('hidden');
+    }
+}
+
+function saveGame() {
+    try {
+        gameState.lastSaveTime = Date.now();
+        localStorage.setItem('urban_chillquarium_3d_v1', JSON.stringify(gameState));
+    } catch (e) {}
+}
+
+function loadGame() {
+    let hasExistingSave = false;
+    try {
+        const raw = localStorage.getItem('urban_chillquarium_3d_v1');
+        if (raw) {
+            const parsed = JSON.parse(raw);
+            gameState = { ...DEFAULT_STATE, ...parsed };
+            gameState.fishes = (gameState.fishes || []).filter(f => FISH_SPECIES.some(s => s.id === f.speciesId));
+            hasExistingSave = gameState.fishes.length > 0;
+        }
+    } catch (e) {
+        gameState = JSON.parse(JSON.stringify(DEFAULT_STATE));
+    }
+
+    if (!hasExistingSave) {
+        addFishToTank('guppy', false, '小綠');
+        addFishToTank('neon_tetra', false, '霓虹');
+    } else {
+        const now = Date.now();
+        const offlineSec = Math.max(0, (now - (gameState.lastSaveTime || now)) / 1000);
+        simulateOfflineProgress(offlineSec);
+        gameState.fishes.forEach(f => createFish3DMesh(f));
+    }
+
+    rebuildDecorations3D();
+    setLighting(gameState.lighting || 'day');
+    document.getElementById('mute-btn').textContent = gameState.muted ? '🔇' : '🔊';
+    updateHUD();
+    saveGame();
+}
+
+window.addEventListener('beforeunload', () => {
+    saveGame();
+});
+
+window.onload = function () {
+    initThreeJS();
+    loadGame();
+    animate();
+};
+</script>
+</body>
+</html>
