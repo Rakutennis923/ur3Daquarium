@@ -114,7 +114,7 @@
                 <span class="text-lg">✨</span>
                 <div>
                     <div class="text-[10px] text-cyan-200/70 leading-none">被動收益</div>
-                    <div id="hud-income" class="text-sm font-semibold text-emerald-300">+0 / 10秒</div>
+                    <div id="hud-income" class="text-sm font-semibold text-emerald-300">+0 / 25秒</div>
                 </div>
             </div>
         </div>
@@ -216,7 +216,7 @@
                     </div>
                 </div>
                 <div class="flex justify-between items-center pt-1 text-slate-300 border-t border-white/10">
-                    <span>成魚被動收益：<strong id="insp-passive" class="text-emerald-300">+2 🪙/10s</strong></span>
+                    <span>成魚被動收益：<strong id="insp-passive" class="text-emerald-300">+2 🪙/25s</strong></span>
                 </div>
             </div>
 
@@ -273,107 +273,146 @@
     </div>
 
 <script>
-// 1. 遊戲核心資料庫：10 種擬真觀賞魚類定義
+// 1. 遊戲核心資料庫：14 種擬真觀賞魚類定義
 const FISH_SPECIES = [
     {
         id: 'guppy', name: '孔雀魚', rarity: 'Common', icon: '🐟',
         bodyType: 'guppy', baseColor: '#f97316', secColor: '#38bdf8', finColor: '#fb7185',
-        basePrice: 30, passiveRate: 1, growthTime: 45,
+        basePrice: 30, passiveRate: 1, growthTime: 55,
         desc: '華麗寬大的豹紋扇形尾鰭與細長銀藍身軀，在水中輕盈擺動。'
     },
     {
         id: 'neon_tetra', name: '紅蓮燈', rarity: 'Common', icon: '💠',
         bodyType: 'tetra', baseColor: '#1d4ed8', secColor: '#ef4444', finColor: '#93c5fd',
-        basePrice: 35, passiveRate: 1, growthTime: 50,
+        basePrice: 35, passiveRate: 1, growthTime: 60,
         desc: '體側貫穿一道螢光電光藍縱帶與鮮紅腹部，群游時宛如水下霓虹。'
     },
     {
         id: 'goldfish', name: '流金金魚', rarity: 'Common', icon: '🐡',
         bodyType: 'goldfish', baseColor: '#f59e0b', secColor: '#fef3c7', finColor: '#fb923c',
-        basePrice: 45, passiveRate: 2, growthTime: 60,
+        basePrice: 45, passiveRate: 2, growthTime: 70,
         desc: '圓潤飽滿的橙金鱗片身軀搭配飄逸雙尾紗鰭，游姿優雅從容。'
+    },
+    {
+        id: 'zebra_danio', name: '斑馬魚', rarity: 'Common', icon: '🦓',
+        bodyType: 'tetra', baseColor: '#e2e8f0', secColor: '#1e3a8a', finColor: '#cbd5e1',
+        basePrice: 40, passiveRate: 1, growthTime: 65,
+        desc: '流線型銀白身軀披著深藍平行條紋，活潑好動且適應力極強。'
     },
     {
         id: 'clownfish', name: '公子小丑魚', rarity: 'Rare', icon: '🐠',
         bodyType: 'clown', baseColor: '#ea580c', secColor: '#ffffff', finColor: '#fb923c',
-        basePrice: 75, passiveRate: 3, growthTime: 75,
+        basePrice: 75, passiveRate: 3, growthTime: 85,
         desc: '鮮豔橘紅鱗片搭配三道鑲黑邊的純白垂直橫帶，雙胸鰭如船槳般活潑划動。'
     },
     {
         id: 'blue_tang', name: '藍倒吊', rarity: 'Rare', icon: '🐟',
         bodyType: 'tang', baseColor: '#2563eb', secColor: '#0f172a', finColor: '#facc15',
-        basePrice: 90, passiveRate: 4, growthTime: 85,
+        basePrice: 90, passiveRate: 4, growthTime: 95,
         desc: '皇家寶藍橢圓側扁身軀點綴調色盤黑斑與鮮黃尾鰭，泳速敏捷。'
     },
     {
         id: 'angelfish', name: '神仙魚', rarity: 'Rare', icon: '🦋',
         bodyType: 'angel', baseColor: '#e2e8f0', secColor: '#1e293b', finColor: '#fde047',
-        basePrice: 110, passiveRate: 5, growthTime: 95,
+        basePrice: 110, passiveRate: 5, growthTime: 105,
         desc: '極致側扁的菱形銀鱗身軀與修長飄逸的上下絲狀鰭條，氣質高雅。'
+    },
+    {
+        id: 'yellow_tang', name: '黃金吊', rarity: 'Rare', icon: '🍋',
+        bodyType: 'tang', baseColor: '#eab308', secColor: '#ca8a04', finColor: '#fef08a',
+        basePrice: 120, passiveRate: 5, growthTime: 110,
+        desc: '通體耀眼檸檬黃的側扁身軀，如同水中游動的陽光寶石。'
     },
     {
         id: 'betta', name: '半月鬥魚', rarity: 'Epic', icon: '🌺',
         bodyType: 'betta', baseColor: '#be123c', secColor: '#4f46e5', finColor: '#f43f5e',
-        basePrice: 190, passiveRate: 8, growthTime: 115,
+        basePrice: 190, passiveRate: 7, growthTime: 125,
         desc: '展開如 180 度半月般的絲絨放射狀大尾鰭，寶石紅與靛紫光澤交織。'
     },
     {
         id: 'lionfish', name: '簑鮋 (獅子魚)', rarity: 'Epic', icon: '🦁',
         bodyType: 'lion', baseColor: '#991b1b', secColor: '#fef2f2', finColor: '#fca5a5',
-        basePrice: 240, passiveRate: 11, growthTime: 130,
+        basePrice: 240, passiveRate: 9, growthTime: 140,
         desc: '紅白斑馬條紋身軀配以華麗放射狀羽翼長棘，如水下貴族般巡遊。'
+    },
+    {
+        id: 'discus', name: '七彩神仙魚', rarity: 'Epic', icon: '🎨',
+        bodyType: 'angel', baseColor: '#0284c7', secColor: '#f97316', finColor: '#38bdf8',
+        basePrice: 270, passiveRate: 11, growthTime: 150,
+        desc: '圓盤狀身軀繪滿土耳其藍與橘紅波浪紋理，被譽為熱帶魚之王。'
     },
     {
         id: 'arowana', name: '過背金龍魚', rarity: 'Mythic', icon: '🐉',
         bodyType: 'arowana', baseColor: '#d97706', secColor: '#fef08a', finColor: '#b45309',
-        basePrice: 480, passiveRate: 20, growthTime: 155,
+        basePrice: 480, passiveRate: 16, growthTime: 175,
         desc: '修長霸氣的黃金金屬大片鱗甲與下顎雙觸鬚，游動時展現王者波浪律動。'
     },
     {
         id: 'mola_mola', name: '翻車魚 (曼波魚)', rarity: 'Mythic', icon: '🌊',
         bodyType: 'mola', baseColor: '#94a3b8', secColor: '#475569', finColor: '#64748b',
-        basePrice: 540, passiveRate: 24, growthTime: 165,
+        basePrice: 540, passiveRate: 19, growthTime: 185,
         desc: '銀灰斑駁的粗糙皮革質感巨型側扁身軀，靠上下兩片船舵狀長鰭悠然划水。'
+    },
+    {
+        id: 'koi_kohaku', name: '丹頂紅白錦鯉', rarity: 'Mythic', icon: '🎏',
+        bodyType: 'arowana', baseColor: '#f8fafc', secColor: '#dc2626', finColor: '#fee2e2',
+        basePrice: 600, passiveRate: 22, growthTime: 195,
+        desc: '雪白無瑕的身軀頭頂一抹鮮紅圓斑，象徵好運與優雅的東方名魚。'
     }
 ];
 
 const SEED_PACKS = [
     {
         id: 'freshwater', name: '淡水新手魚苗包', price: 45, icon: '🌱',
-        desc: '適合都市新手的溫和觀賞魚，成長快速。',
+        desc: '適合都市新手的溫和觀賞魚，成長穩定好照顧。',
         pool: [
-            { id: 'guppy', weight: 42 },
-            { id: 'neon_tetra', weight: 38 },
-            { id: 'goldfish', weight: 20 }
+            { id: 'guppy', weight: 32 },
+            { id: 'neon_tetra', weight: 30 },
+            { id: 'zebra_danio', weight: 22 },
+            { id: 'goldfish', weight: 16 }
         ]
     },
     {
-        id: 'tropical', name: '熱帶珊瑚魚苗包', price: 110, icon: '🏝️',
+        id: 'tropical', name: '熱帶珊瑚魚苗包', price: 115, icon: '🏝️',
         desc: '色彩繽紛的礁岩熱帶魚，有機會開出稀有與史詩品種。',
         pool: [
-            { id: 'clownfish', weight: 35 },
-            { id: 'blue_tang', weight: 30 },
-            { id: 'angelfish', weight: 23 },
-            { id: 'betta', weight: 12 }
+            { id: 'clownfish', weight: 28 },
+            { id: 'blue_tang', weight: 26 },
+            { id: 'yellow_tang', weight: 22 },
+            { id: 'angelfish', weight: 16 },
+            { id: 'betta', weight: 8 }
         ]
     },
     {
-        id: 'deepsea', name: '深海珍稀傳說包', price: 280, icon: '🔮',
+        id: 'royal_river', name: '皇家溪流珍品包', price: 195, icon: '👑',
+        desc: '嚴選華麗鰭型與艷麗花紋的鑑賞級淡水名魚。',
+        pool: [
+            { id: 'angelfish', weight: 28 },
+            { id: 'betta', weight: 32 },
+            { id: 'discus', weight: 28 },
+            { id: 'koi_kohaku', weight: 12 }
+        ]
+    },
+    {
+        id: 'deepsea', name: '深海珍稀傳說包', price: 320, icon: '🔮',
         desc: '蘊含神話級水族霸主的高階魚苗，擁有極高收藏與被動收益。',
         pool: [
-            { id: 'betta', weight: 35 },
-            { id: 'lionfish', weight: 35 },
+            { id: 'lionfish', weight: 32 },
+            { id: 'discus', weight: 28 },
             { id: 'arowana', weight: 16 },
-            { id: 'mola_mola', weight: 14 }
+            { id: 'mola_mola', weight: 14 },
+            { id: 'koi_kohaku', weight: 10 }
         ]
     }
 ];
 
 const DECORATIONS = [
-    { id: 'driftwood', name: '沉木與莫絲苔蘚', price: 120, icon: '🪵', bonusText: '增添自然森林氣息', unlocked: false },
-    { id: 'coral_reef', name: '彩虹活珊瑚礁', price: 250, icon: '🪸', bonusText: '全魚缸成長速度 +15%', unlocked: false },
-    { id: 'castle', name: '亞特蘭提斯古堡', price: 420, icon: '🏰', bonusText: '成魚被動金幣收益 +20%', unlocked: false },
-    { id: 'crystal', name: '深海發光水晶簇', price: 650, icon: '💎', bonusText: '異色變異(Shiny)機率提升至 22%', unlocked: false }
+    { id: 'driftwood', name: '沉木與莫絲苔蘚', price: 120, icon: '🪵', bonusText: '全魚缸飽食消耗減緩 12%' },
+    { id: 'volcano', name: '迷你火山氣泡石', price: 190, icon: '🌋', bonusText: '水中溶氧提升，成長速度 +10%' },
+    { id: 'coral_reef', name: '彩虹活珊瑚礁', price: 280, icon: '🪸', bonusText: '全魚缸成長速度 +15%' },
+    { id: 'japanese_lantern', name: '枯山水石燈籠', price: 360, icon: '🏮', bonusText: '禪意氛圍，出售成魚價格 +15%' },
+    { id: 'castle', name: '亞特蘭提斯古堡', price: 480, icon: '🏰', bonusText: '成魚被動金幣收益 +20%' },
+    { id: 'crystal', name: '深海發光水晶簇', price: 720, icon: '💎', bonusText: '異色變異(Shiny)機率提升至 22%' }
 ];
 
 const RARITY_STYLES = {
@@ -385,9 +424,12 @@ const RARITY_STYLES = {
 
 // 2. 遊戲狀態管理
 const DEFAULT_STATE = {
-    coins: 200,
+    coins: 180,
     tankLevel: 1,
     foodLevel: 1,
+    filterLevel: 1,
+    heaterLevel: 1,
+    lightLevel: 1,
     lighting: 'day',
     muted: false,
     fishes: [],
@@ -797,6 +839,25 @@ function getFishTextures(species, isShiny) {
         ctx.fillStyle = primary;
         ctx.beginPath();
         ctx.ellipse(w * 0.56, h * 0.44, w * 0.14, h * 0.11, 0, 0, Math.PI * 2);
+        ctx.fill();
+    } else if (species.id === 'discus') {
+        for (let y = 20; y < h; y += 26) {
+            ctx.strokeStyle = secondary;
+            ctx.lineWidth = 8;
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.bezierCurveTo(w * 0.33, y + 18, w * 0.66, y - 18, w, y);
+            ctx.stroke();
+        }
+    } else if (species.id === 'koi_kohaku') {
+        ctx.fillStyle = primary;
+        ctx.fillRect(0, 0, w, h);
+        ctx.fillStyle = secondary;
+        ctx.beginPath();
+        ctx.arc(w * 0.84, h * 0.5, 28, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(w * 0.48, h * 0.45, 58, 36, 0.2, 0, Math.PI * 2);
         ctx.fill();
     } else if (species.bodyType === 'angel') {
         [0.22, 0.44, 0.66, 0.85].forEach((posRatio, idx) => {
@@ -1253,6 +1314,29 @@ function rebuildDecorations3D() {
         decorGroup.add(base, tower, roof);
     }
 
+    if (gameState.decorations.includes('volcano')) {
+        const rockMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.92 });
+        const lavaMat = new THREE.MeshBasicMaterial({ color: 0xf97316 });
+        const cone = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.72, 0.95, 12), rockMat);
+        cone.position.set(-1.3, floorY + 0.42, 1.1);
+        const crater = new THREE.Mesh(new THREE.CircleGeometry(0.21, 12), lavaMat);
+        crater.rotation.x = -Math.PI / 2;
+        crater.position.set(-1.3, floorY + 0.91, 1.1);
+        decorGroup.add(cone, crater);
+    }
+
+    if (gameState.decorations.includes('japanese_lantern')) {
+        const graniteMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.85 });
+        const warmGlowMat = new THREE.MeshBasicMaterial({ color: 0xfef08a });
+        const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.22, 0.85, 6), graniteMat);
+        pillar.position.set(1.2, floorY + 0.4, -1.2);
+        const box = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.32, 0.36), warmGlowMat);
+        box.position.set(1.2, floorY + 0.95, -1.2);
+        const cap = new THREE.Mesh(new THREE.ConeGeometry(0.42, 0.35, 6), graniteMat);
+        cap.position.set(1.2, floorY + 1.25, -1.2);
+        decorGroup.add(pillar, box, cap);
+    }
+
     if (gameState.decorations.includes('crystal')) {
         const crysMat = new THREE.MeshPhysicalMaterial({
             color: 0x22d3ee,
@@ -1279,6 +1363,7 @@ function rebuildDecorations3D() {
 const clock = new THREE.Clock();
 let passiveIncomeTimer = 0;
 let autoSaveTimer = 0;
+const PASSIVE_INTERVAL = 25; // 調慢被動金幣產出週期（每 25 秒結算一次）
 
 function getMaxCapacity() {
     return 8 + (gameState.tankLevel - 1) * 4;
@@ -1299,8 +1384,9 @@ function getFishStageInfo(fish) {
 function getFishSellValue(fish) {
     const species = FISH_SPECIES.find(s => s.id === fish.speciesId) || FISH_SPECIES[0];
     const stageInfo = getFishStageInfo(fish);
-    let mult = stageInfo.stage === 'fry' ? 0.5 : (stageInfo.stage === 'juvenile' ? 1.0 : 1.85);
+    let mult = stageInfo.stage === 'fry' ? 0.5 : (stageInfo.stage === 'juvenile' ? 1.0 : 1.75);
     if (fish.isShiny) mult *= 2.5;
+    if (stageInfo.isAdult && gameState.decorations.includes('japanese_lantern')) mult *= 1.15;
     return Math.round(species.basePrice * mult);
 }
 
@@ -1310,8 +1396,18 @@ function getFishPassiveIncome(fish) {
     if (!stageInfo.isAdult) return 0;
     let rate = species.passiveRate;
     if (fish.isShiny) rate *= 2;
-    if (gameState.decorations.includes('castle')) rate = Math.ceil(rate * 1.2);
-    return rate;
+    const filterMult = 1 + ((gameState.filterLevel || 1) - 1) * 0.15;
+    rate *= filterMult;
+    if (gameState.decorations.includes('castle')) rate *= 1.2;
+    return Math.max(1, Math.round(rate));
+}
+
+function getTotalGrowthMultiplier() {
+    let mult = 1.0;
+    mult += ((gameState.heaterLevel || 1) - 1) * 0.18;
+    if (gameState.decorations.includes('volcano')) mult += 0.10;
+    if (gameState.decorations.includes('coral_reef')) mult += 0.15;
+    return mult;
 }
 
 function animate() {
@@ -1366,16 +1462,16 @@ function animate() {
             }
         }
     }
-
-    const decorGrowthMult = gameState.decorations.includes('coral_reef') ? 1.15 : 1.0;
+    const totalGrowthMult = getTotalGrowthMultiplier();
+    const hungerDecayMult = gameState.decorations.includes('driftwood') ? 0.88 : 1.0;
 
     gameState.fishes.forEach(fish => {
         const entry = fishMeshes.get(fish.id);
         if (!entry) return;
 
-        fish.hunger = Math.max(0, fish.hunger - dt * 0.65);
+        fish.hunger = Math.max(0, fish.hunger - dt * 0.65 * hungerDecayMult);
         const hungerSpeedMult = fish.hunger > 20 ? 1.0 : 0.35;
-        fish.growth += dt * hungerSpeedMult * decorGrowthMult;
+        fish.growth += dt * hungerSpeedMult * totalGrowthMult;
 
         const stageInfo = getFishStageInfo(fish);
         entry.root.scale.lerp(new THREE.Vector3(stageInfo.scale, stageInfo.scale, stageInfo.scale), 0.08);
@@ -1472,7 +1568,7 @@ function animate() {
     });
 
     passiveIncomeTimer += dt;
-    if (passiveIncomeTimer >= 10) {
+    if (passiveIncomeTimer >= PASSIVE_INTERVAL) {
         passiveIncomeTimer = 0;
         grantPassiveIncome();
     }
@@ -1681,7 +1777,7 @@ function updateHUD() {
     document.getElementById('hud-capacity').textContent = `${gameState.fishes.length} / ${getMaxCapacity()}`;
     let totalIncome = 0;
     gameState.fishes.forEach(f => totalIncome += getFishPassiveIncome(f));
-    document.getElementById('hud-income').textContent = `+${totalIncome} / 10秒`;
+    document.getElementById('hud-income').textContent = `+${totalIncome} / ${PASSIVE_INTERVAL}秒`;
 }
 
 // 9. UI 面板互動
@@ -1813,7 +1909,7 @@ function updateInspectorLive() {
     document.getElementById('insp-hunger-bar').style.width = `${hungerPct}%`;
 
     const passive = getFishPassiveIncome(fish);
-    document.getElementById('insp-passive').textContent = stageInfo.isAdult ? `+${passive} 🪙/10s` : `成魚後開啟`;
+    document.getElementById('insp-passive').textContent = stageInfo.isAdult ? `+${passive} 🪙/${PASSIVE_INTERVAL}s` : `成魚後開啟`;
 
     const lockBtn = document.getElementById('insp-lock-btn');
     lockBtn.innerHTML = fish.locked ? `<span>🔒</span> <span class="text-amber-300">已上鎖</span>` : `<span>🔓</span> <span>未上鎖</span>`;
@@ -1909,31 +2005,57 @@ function renderModalContent() {
         `;
     } else if (currentModalTab === 'upgrades') {
         iconEl.textContent = '⚙️';
-        titleEl.textContent = '水族設備升級';
-        const tankCost = gameState.tankLevel * 180;
-        const foodCost = gameState.foodLevel * 140;
-        const maxFood = gameState.foodLevel >= 4;
+        titleEl.textContent = '水族設備升級 (Lv.1 ~ Lv.5)';
+        const upgradesList = [
+            {
+                key: 'tankLevel', icon: '🐠', name: '擴建水族箱空間',
+                maxLv: 5, baseCost: 180,
+                desc: (lv) => `目前最大容量 ${8 + (lv - 1) * 4} 隻魚 → 升級後可容納 ${8 + lv * 4} 隻魚`
+            },
+            {
+                key: 'foodLevel', icon: '🍤', name: '營養飼料配方',
+                maxLv: 5, baseCost: 150,
+                desc: (lv) => `投餵飽食恢復 +${25 + (lv - 1) * 10}%，成長加成 +${(lv - 1) * 35}%`
+            },
+            {
+                key: 'filterLevel', icon: '🫧', name: '高效生物過濾系統',
+                maxLv: 5, baseCost: 220,
+                desc: (lv) => `水質清澈度提升，全體成魚被動金幣收益 +${(lv - 1) * 15}%`
+            },
+            {
+                key: 'heaterLevel', icon: '🌡️', name: '微電腦恆溫加熱棒',
+                maxLv: 5, baseCost: 200,
+                desc: (lv) => `維持最佳水溫，全魚缸魚苗成長速度 +${(lv - 1) * 18}%`
+            },
+            {
+                key: 'lightLevel', icon: '💡', name: '全光譜水草造景燈',
+                maxLv: 5, baseCost: 260,
+                desc: (lv) => `提升魚鱗光澤度，開出異色變異(Shiny)機率額外 +${(lv - 1) * 3}%`
+            }
+        ];
+
         bodyEl.innerHTML = `
             <div class="space-y-3">
-                <div class="glass-light rounded-2xl p-4 flex items-center justify-between gap-3">
-                    <div>
-                        <div class="text-sm font-bold text-white">🐠 擴建水族箱空間 (Lv.${gameState.tankLevel})</div>
-                        <div class="text-xs text-slate-300 mt-1">目前最大容量 ${getMaxCapacity()} 隻魚 → 升級後可容納 ${getMaxCapacity() + 4} 隻魚</div>
-                    </div>
-                    <button onclick="upgradeTank()" class="shrink-0 px-4 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs transition">
-                        🪙 ${tankCost} 升級
-                    </button>
-                </div>
-                <div class="glass-light rounded-2xl p-4 flex items-center justify-between gap-3">
-                    <div>
-                        <div class="text-sm font-bold text-white">🍤 營養飼料配方 (Lv.${gameState.foodLevel} / 4)</div>
-                        <div class="text-xs text-slate-300 mt-1">提升每次投餵的飽食度恢復與魚苗成長推進速度</div>
-                    </div>
-                    ${maxFood
-                        ? `<span class="px-3 py-2 rounded-xl bg-emerald-500/20 text-emerald-300 text-xs font-bold">已達最高級</span>`
-                        : `<button onclick="upgradeFood()" class="shrink-0 px-4 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs transition">🪙 ${foodCost} 升級</button>`
-                    }
-                </div>
+                ${upgradesList.map(u => {
+                    const curLv = gameState[u.key] || 1;
+                    const isMax = curLv >= u.maxLv;
+                    const cost = Math.round(u.baseCost * Math.pow(1.45, curLv - 1));
+                    return `
+                        <div class="glass-light rounded-2xl p-3.5 sm:p-4 flex items-center justify-between gap-3">
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-sm font-bold text-white">${u.icon} ${u.name}</span>
+                                    <span class="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 font-bold">Lv.${curLv} / ${u.maxLv}</span>
+                                </div>
+                                <div class="text-xs text-slate-300 mt-1">${u.desc(curLv)}</div>
+                            </div>
+                            ${isMax
+                                ? `<span class="shrink-0 px-3 py-2 rounded-xl bg-emerald-500/20 text-emerald-300 text-xs font-bold">已滿級</span>`
+                                : `<button onclick="upgradeEquipment('${u.key}', ${u.maxLv}, ${u.baseCost}, '${u.name}')" class="shrink-0 px-3.5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs transition">🪙 ${cost} 升級</button>`
+                            }
+                        </div>
+                    `;
+                }).join('')}
             </div>
         `;
     } else if (currentModalTab === 'decor') {
@@ -2017,7 +2139,9 @@ function buySeedPack(packId) {
         r -= item.weight;
     }
 
-    const shinyChance = gameState.decorations.includes('crystal') ? 0.22 : 0.12;
+    const baseShiny = gameState.decorations.includes('crystal') ? 0.22 : 0.12;
+    const lightBonus = ((gameState.lightLevel || 1) - 1) * 0.03;
+    const shinyChance = baseShiny + lightBonus;
     const isShiny = Math.random() < shinyChance;
 
     const newFish = addFishToTank(chosenId, isShiny);
@@ -2063,21 +2187,21 @@ function upgradeTank() {
     saveGame();
     showToast(`水族箱擴建至 Lv.${gameState.tankLevel}！`);
 }
-
-function upgradeFood() {
-    if (gameState.foodLevel >= 4) return;
-    const cost = gameState.foodLevel * 140;
+function upgradeEquipment(key, maxLv, baseCost, label) {
+    const curLv = gameState[key] || 1;
+    if (curLv >= maxLv) return;
+    const cost = Math.round(baseCost * Math.pow(1.45, curLv - 1));
     if (gameState.coins < cost) {
-        showToast('金幣不足，無法升級飼料');
+        showToast(`金幣不足，無法升級${label}`);
         return;
     }
     gameState.coins -= cost;
-    gameState.foodLevel++;
+    gameState[key] = curLv + 1;
     sound.playCoinChime();
     updateHUD();
     renderModalContent();
     saveGame();
-    showToast(`飼料配方升級至 Lv.${gameState.foodLevel}！`);
+    showToast(`「${label}」已升級至 Lv.${gameState[key]}！`);
 }
 
 function buyDecoration(decorId) {
@@ -2115,9 +2239,9 @@ function simulateOfflineProgress(offlineSec) {
     if (effectiveSec < 15 || gameState.fishes.length === 0) return;
 
     const events = [];
-    const decorGrowthMult = gameState.decorations.includes('coral_reef') ? 1.15 : 1.0;
+    const totalGrowthMult = getTotalGrowthMultiplier();
     let totalOfflineCoins = 0;
-    const offlineGrowthMult = 0.55 * decorGrowthMult;
+    const offlineGrowthMult = 0.45 * totalGrowthMult;
 
     gameState.fishes.forEach(fish => {
         const species = FISH_SPECIES.find(s => s.id === fish.speciesId) || FISH_SPECIES[0];
@@ -2135,12 +2259,12 @@ function simulateOfflineProgress(offlineSec) {
             events.push(`🎉 「${fish.name}」(${species.name}) 已完全長成成魚，開始產出療癒金幣！`);
         }
 
-        const cycles = Math.floor(effectiveSec / 10);
+        const cycles = Math.floor(effectiveSec / PASSIVE_INTERVAL);
         if (cycles > 0) {
             if (wasAdult) {
-                totalOfflineCoins += getFishPassiveIncome(fish) * cycles * 0.6;
+                totalOfflineCoins += getFishPassiveIncome(fish) * cycles * 0.45;
             } else if (afterStage.isAdult) {
-                totalOfflineCoins += getFishPassiveIncome(fish) * Math.floor(cycles * 0.4) * 0.6;
+                totalOfflineCoins += getFishPassiveIncome(fish) * Math.floor(cycles * 0.4) * 0.45;
             }
         }
     });
