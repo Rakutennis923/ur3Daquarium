@@ -100,7 +100,7 @@
                 <span class="text-xl">🪙</span>
                 <div>
                     <div class="text-[10px] text-cyan-200/70 leading-none">療癒金幣</div>
-                    <div id="hud-coins" class="text-sm sm:text-base font-bold text-amber-300 tracking-wide">200</div>
+                    <div id="hud-coins" class="text-sm sm:text-base font-bold text-amber-300 tracking-wide">180</div>
                 </div>
             </div>
             <div class="glass px-3.5 py-2 rounded-2xl flex items-center gap-2">
@@ -179,7 +179,7 @@
         </div>
     </div>
 
-    <!-- 單隻魚詳情卡片（外層全寬置中容器，確保手機版絕對居中不偏移） -->
+    <!-- 單隻魚詳情卡片 -->
     <div id="fish-inspector" class="hidden fixed inset-x-0 bottom-16 sm:bottom-20 z-30 flex justify-center px-4 pointer-events-none">
         <div class="w-full max-w-[248px] sm:max-w-[272px] glass rounded-2xl p-2.5 sm:p-3 animate-pop pointer-events-auto">
             <div class="flex items-start justify-between mb-1.5">
@@ -216,7 +216,7 @@
                     </div>
                 </div>
                 <div class="flex justify-between items-center pt-1 text-slate-300 border-t border-white/10">
-                    <span>成魚被動收益：<strong id="insp-passive" class="text-emerald-300">+2 🪙/25s</strong></span>
+                    <span>成魚被動收益：<strong id="insp-passive" class="text-emerald-300">+1 🪙/25s</strong></span>
                 </div>
             </div>
 
@@ -273,13 +273,13 @@
     </div>
 
 <script>
-// 1. 遊戲核心資料庫：14 種擬真觀賞魚類定義
+// 1. 遊戲核心資料庫：17 種擬真觀賞魚類定義（含夜光螢光魚種）
 const FISH_SPECIES = [
     {
         id: 'guppy', name: '孔雀魚', rarity: 'Common', icon: '🐟',
         bodyType: 'guppy', baseColor: '#f97316', secColor: '#38bdf8', finColor: '#fb7185',
         basePrice: 30, passiveRate: 1, growthTime: 55,
-        desc: '華麗寬大的豹紋扇形尾鰭與細長銀藍身軀，在水中輕盈擺動。'
+        desc: '華麗寬大的豹紋大三角扇尾與細長銀藍身軀，在水中輕盈擺動。'
     },
     {
         id: 'neon_tetra', name: '紅蓮燈', rarity: 'Common', icon: '💠',
@@ -358,8 +358,36 @@ const FISH_SPECIES = [
         bodyType: 'arowana', baseColor: '#f8fafc', secColor: '#dc2626', finColor: '#fee2e2',
         basePrice: 600, passiveRate: 22, growthTime: 195,
         desc: '雪白無瑕的身軀頭頂一抹鮮紅圓斑，象徵好運與優雅的東方名魚。'
+    },
+    {
+        id: 'glo_tetra', name: '螢光冰藍斑馬', rarity: 'Rare', icon: '💠',
+        bodyType: 'tetra', baseColor: '#0284c7', secColor: '#22d3ee', finColor: '#67e8f9',
+        glowColor: '#22d3ee',
+        basePrice: 130, passiveRate: 6, growthTime: 90,
+        desc: '具備天然生物螢光基因，當切換至「深海夜光」模式時全身會散發夢幻電光藍微光。'
+    },
+    {
+        id: 'neon_angel', name: '夜光紫晶神仙', rarity: 'Epic', icon: '🔮',
+        bodyType: 'angel', baseColor: '#4c1d95', secColor: '#e879f9', finColor: '#f0abfc',
+        glowColor: '#e879f9',
+        basePrice: 290, passiveRate: 12, growthTime: 145,
+        desc: '深邃紫羅蘭魚身鑲嵌螢光粉紫條紋，在暗處宛如漂浮的霓虹水晶。'
+    },
+    {
+        id: 'abyss_dragon', name: '深淵星光龍魚', rarity: 'Mythic', icon: '🌌',
+        bodyType: 'arowana', baseColor: '#0f172a', secColor: '#34d399', finColor: '#6ee7b7',
+        glowColor: '#10b981',
+        basePrice: 680, passiveRate: 26, growthTime: 205,
+        desc: '棲息於幽暗深水的傳說神魚，夜幕降臨時鱗片縫隙與雙鬚會綻放翡翠星光。'
     }
 ];
+
+const RARITY_META = {
+    Common: { label: '普通', color: 'text-slate-300', bg: 'bg-slate-500/20 border-slate-400/30' },
+    Rare: { label: '稀有', color: 'text-sky-300', bg: 'bg-sky-500/20 border-sky-400/30' },
+    Epic: { label: '史詩', color: 'text-purple-300', bg: 'bg-purple-500/20 border-purple-400/30' },
+    Mythic: { label: '傳說', color: 'text-amber-300', bg: 'bg-amber-500/20 border-amber-400/30' }
+};
 
 const SEED_PACKS = [
     {
@@ -395,1487 +423,1566 @@ const SEED_PACKS = [
     },
     {
         id: 'deepsea', name: '深海珍稀傳說包', price: 320, icon: '🔮',
-        desc: '蘊含神話級水族霸主的高階魚苗，擁有極高收藏與被動收益。',
+        desc: '蘊含神話級水族霸主與夜光螢光魚種，關燈後展現夢幻微光。',
         pool: [
-            { id: 'lionfish', weight: 32 },
-            { id: 'discus', weight: 28 },
-            { id: 'arowana', weight: 16 },
-            { id: 'mola_mola', weight: 14 },
-            { id: 'koi_kohaku', weight: 10 }
+            { id: 'glo_tetra', weight: 24 },
+            { id: 'neon_angel', weight: 22 },
+            { id: 'lionfish', weight: 20 },
+            { id: 'discus', weight: 14 },
+            { id: 'arowana', weight: 8 },
+            { id: 'mola_mola', weight: 6 },
+            { id: 'abyss_dragon', weight: 6 }
         ]
     }
 ];
 
-const DECORATIONS = [
-    { id: 'driftwood', name: '沉木與莫絲苔蘚', price: 120, icon: '🪵', bonusText: '全魚缸飽食消耗減緩 12%' },
-    { id: 'volcano', name: '迷你火山氣泡石', price: 190, icon: '🌋', bonusText: '水中溶氧提升，成長速度 +10%' },
-    { id: 'coral_reef', name: '彩虹活珊瑚礁', price: 280, icon: '🪸', bonusText: '全魚缸成長速度 +15%' },
-    { id: 'japanese_lantern', name: '枯山水石燈籠', price: 360, icon: '🏮', bonusText: '禪意氛圍，出售成魚價格 +15%' },
-    { id: 'castle', name: '亞特蘭提斯古堡', price: 480, icon: '🏰', bonusText: '成魚被動金幣收益 +20%' },
-    { id: 'crystal', name: '深海發光水晶簇', price: 720, icon: '💎', bonusText: '異色變異(Shiny)機率提升至 22%' }
+const UPGRADES_DATA = [
+    {
+        id: 'tankLevel', name: '全景超白玻璃魚缸擴建', icon: '📐', maxLevel: 5,
+        costs: [0, 140, 320, 680, 1300],
+        desc: (lv) => `提升魚缸最大容納數量（目前上限：${getMaxCapacity(lv)} 隻魚）`
+    },
+    {
+        id: 'foodLevel', name: '高營養螺旋藻精煉飼料', icon: '🥫', maxLevel: 5,
+        costs: [0, 110, 260, 520, 980],
+        desc: (lv) => `每顆飼料提供更多成長經驗（目前成長加成：+${(lv - 1) * 35}%）`
+    },
+    {
+        id: 'filterLevel', name: '高效生物過濾系統', icon: '🫧', maxLevel: 5,
+        costs: [0, 130, 300, 620, 1180],
+        desc: (lv) => `水質清澈讓成魚更活躍，提升被動金幣收益（目前加成：+${(lv - 1) * 20}%）`
+    },
+    {
+        id: 'heaterLevel', name: '微電腦恆溫加熱棒', icon: '🌡️', maxLevel: 5,
+        costs: [0, 150, 340, 700, 1350],
+        desc: (lv) => `維持理想水溫，加速所有魚苗自然成長速度（目前加速：+${(lv - 1) * 18}%）`
+    },
+    {
+        id: 'lampLevel', name: '全光譜水草造景燈', icon: '💡', maxLevel: 5,
+        costs: [0, 180, 420, 860, 1600],
+        desc: (lv) => `促進基因顯色，提高孵化出「✨ 異色變異」魚苗的機率（目前機率：${8 + (lv - 1) * 4}%）`
+    }
 ];
 
-const RARITY_STYLES = {
-    Common: { label: '普通', color: 'text-slate-300', bg: 'bg-slate-500/20 border-slate-400/30' },
-    Rare: { label: '稀有', color: 'text-sky-300', bg: 'bg-sky-500/20 border-sky-400/30' },
-    Epic: { label: '史詩', color: 'text-purple-300', bg: 'bg-purple-500/20 border-purple-400/30' },
-    Mythic: { label: '傳說', color: 'text-amber-300', bg: 'bg-amber-500/20 border-amber-400/40' }
-};
+const DECOR_ITEMS = [
+    {
+        id: 'driftwood', name: '天然杜鵑根沉木', price: 90, icon: '🪵',
+        bonusText: '所有魚類自然成長速度 +10%',
+        pos: { x: -2.6, z: -1.1 }
+    },
+    {
+        id: 'coral', name: '粉彩鹿角活珊瑚', price: 150, icon: '🪸',
+        bonusText: '成魚被動療癒金幣收益 +15%',
+        pos: { x: 2.5, z: -0.9 }
+    },
+    {
+        id: 'volcano', name: '迷你火山氣泡石', price: 210, icon: '🌋',
+        bonusText: '增加水體溶氧量，自然成長速度 +10%',
+        pos: { x: 0.2, z: -1.4 }
+    },
+    {
+        id: 'castle', name: '苔蘚古堡微縮造景', price: 280, icon: '🏰',
+        bonusText: '成魚出售價格提升 +20%',
+        pos: { x: 0.0, z: 1.3 }
+    },
+    {
+        id: 'lantern', name: '枯山水石燈籠', price: 340, icon: '🏮',
+        bonusText: 'Zen 禪意氛圍，成魚出售價格再 +15%',
+        pos: { x: -2.3, z: 1.2 }
+    },
+    {
+        id: 'crystal', name: '深海發光水晶簇', price: 420, icon: '💎',
+        bonusText: '全魚缸被動金幣收益 +25%',
+        pos: { x: 2.4, z: 1.2 }
+    }
+];
 
-// 2. 遊戲狀態管理
-const DEFAULT_STATE = {
+function getMaxCapacity(tankLevel) {
+    return 8 + (tankLevel - 1) * 4;
+}
+
+// 2. 遊戲狀態管理與獨立設備存檔
+const STORAGE_KEY = 'urban_chillquarium_3d_v4';
+const SPEED_OPTIONS = [0.5, 1, 3, 6];
+
+let gameState = {
     coins: 180,
     tankLevel: 1,
     foodLevel: 1,
     filterLevel: 1,
     heaterLevel: 1,
-    lightLevel: 1,
+    lampLevel: 1,
     lighting: 'day',
-    muted: false,
+    timeScale: 1,
+    unlockedDecors: [],
+    discoveredSpecies: ['guppy', 'neon_tetra'],
     fishes: [],
-    discovered: [],
-    shinyDiscovered: [],
-    decorations: [],
     lastSaveTime: Date.now()
 };
 
-let gameState = JSON.parse(JSON.stringify(DEFAULT_STATE));
-let selectedFishId = null;
-let isZenMode = false;
-let currentModalTab = null;
-let timeScale = 1.0;
+let offlineReportEvents = [];
+let offlineElapsedMinutes = 0;
 
-// 3. Web Audio API 療癒合成音效系統
-class HealingAudio {
-    constructor() {
-        this.ctx = null;
-    }
-    init() {
-        if (!this.ctx) {
-            const AudioContext = window.AudioContext || window.webkitAudioContext;
-            if (AudioContext) this.ctx = new AudioContext();
-        }
-        if (this.ctx && this.ctx.state === 'suspended') {
-            this.ctx.resume();
-        }
-    }
-    playWaterDrop() {
-        if (gameState.muted) return;
-        this.init();
-        if (!this.ctx) return;
-        const now = this.ctx.currentTime;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = 'sine';
-        const baseFreq = 420 + Math.random() * 160;
-        osc.frequency.setValueAtTime(baseFreq, now);
-        osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.85, now + 0.14);
-        gain.gain.setValueAtTime(0.08, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start(now);
-        osc.stop(now + 0.17);
-    }
-    playEatPop() {
-        if (gameState.muted) return;
-        this.init();
-        if (!this.ctx) return;
-        const now = this.ctx.currentTime;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(280, now);
-        osc.frequency.exponentialRampToValueAtTime(520, now + 0.08);
-        gain.gain.setValueAtTime(0.06, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start(now);
-        osc.stop(now + 0.1);
-    }
-    playCoinChime() {
-        if (gameState.muted) return;
-        this.init();
-        if (!this.ctx) return;
-        const now = this.ctx.currentTime;
-        [987.77, 1318.51].forEach((freq, idx) => {
-            const osc = this.ctx.createOscillator();
-            const gain = this.ctx.createGain();
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(freq, now + idx * 0.07);
-            gain.gain.setValueAtTime(0.07, now + idx * 0.07);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.07 + 0.35);
-            osc.connect(gain);
-            gain.connect(this.ctx.destination);
-            osc.start(now + idx * 0.07);
-            osc.stop(now + idx * 0.07 + 0.36);
-        });
+function saveGame() {
+    try {
+        gameState.lastSaveTime = Date.now();
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(gameState));
+    } catch (e) {
+        console.warn('存檔失敗:', e);
     }
 }
-const sound = new HealingAudio();
+
+function loadGame() {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+            const parsed = JSON.parse(raw);
+            gameState = Object.assign(gameState, parsed);
+            if (!gameState.filterLevel) gameState.filterLevel = 1;
+            if (!gameState.heaterLevel) gameState.heaterLevel = 1;
+            if (!gameState.lampLevel) gameState.lampLevel = 1;
+            if (!Array.isArray(gameState.fishes)) gameState.fishes = [];
+            if (!Array.isArray(gameState.unlockedDecors)) gameState.unlockedDecors = [];
+            if (!Array.isArray(gameState.discoveredSpecies)) gameState.discoveredSpecies = [];
+
+            const now = Date.now();
+            const lastTime = gameState.lastSaveTime || now;
+            const elapsedSec = Math.max(0, Math.min(86400 * 7, (now - lastTime) / 1000));
+
+            if (elapsedSec >= 30 && gameState.fishes.length > 0) {
+                simulateOfflineProgress(elapsedSec);
+            }
+        } else {
+            createFishInstance('guppy', false, '小綠', 25);
+            createFishInstance('neon_tetra', false, '霓虹', 10);
+            saveGame();
+        }
+    } catch (e) {
+        console.warn('讀取存檔失敗，初始化新魚缸:', e);
+        createFishInstance('guppy', false, '小綠', 25);
+        saveGame();
+    }
+}
+
+function simulateOfflineProgress(elapsedSec) {
+    const events = [];
+    offlineElapsedMinutes = Math.max(1, Math.round(elapsedSec / 60));
+
+    let totalOfflineCoins = 0;
+    const growthMultiplier = (1 + (gameState.heaterLevel - 1) * 0.18)
+        * (gameState.unlockedDecors.includes('driftwood') ? 1.10 : 1)
+        * (gameState.unlockedDecors.includes('volcano') ? 1.10 : 1);
+
+    gameState.fishes.forEach(fish => {
+        const sp = FISH_SPECIES.find(s => s.id === fish.speciesId);
+        if (!sp) return;
+
+        const prevProgress = fish.growthProgress;
+        const wasAdult = prevProgress >= 100;
+        const wasJuvenile = prevProgress >= 40 && prevProgress < 100;
+
+        fish.hunger = Math.max(25, fish.hunger - elapsedSec * 0.08);
+
+        if (!wasAdult) {
+            const offlineGrowthRate = (100 / sp.growthTime) * 0.35 * growthMultiplier;
+            const gained = offlineGrowthRate * elapsedSec;
+            fish.growthProgress = Math.min(100, fish.growthProgress + gained);
+
+            if (fish.growthProgress >= 100) {
+                events.push(`🎉 <strong>${fish.name}</strong>（${sp.name}）已順利長大成「成魚」了！`);
+                const adultDuration = Math.max(0, elapsedSec - ((100 - prevProgress) / offlineGrowthRate));
+                if (adultDuration > 25) {
+                    const coinsEarned = Math.floor((adultDuration / 25) * getFishPassiveIncome(fish) * 0.45);
+                    totalOfflineCoins += coinsEarned;
+                }
+            } else if (!wasJuvenile && fish.growthProgress >= 40) {
+                events.push(`🌱 <strong>${fish.name}</strong>（${sp.name}）從魚苗成長為「幼魚」階段。`);
+            }
+        } else {
+            const coinsEarned = Math.floor((elapsedSec / 25) * getFishPassiveIncome(fish) * 0.45);
+            totalOfflineCoins += coinsEarned;
+        }
+    });
+
+    if (totalOfflineCoins > 0) {
+        gameState.coins += totalOfflineCoins;
+        events.unshift(`🪙 離線期間成魚群共累積產出了 <strong>+${totalOfflineCoins} 療癒金幣</strong>！`);
+    }
+
+    if (events.length === 0) {
+        events.push(`💧 魚缸水質穩定，${gameState.fishes.length} 隻魚兒在您離開期間悠閒地游動著。`);
+    }
+
+    offlineReportEvents = events;
+}
+
+window.addEventListener('beforeunload', () => saveGame());
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') saveGame();
+});
+
+// 3. Web Audio 療癒水滴與音效合成器
+let audioCtx = null;
+let isMuted = false;
+
+function initAudio() {
+    if (!audioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (AudioContext) audioCtx = new AudioContext();
+    }
+    if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+}
+
+function playSound(type) {
+    if (isMuted) return;
+    initAudio();
+    if (!audioCtx) return;
+
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    if (type === 'drop') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(520, now);
+        osc.frequency.exponentialRampToValueAtTime(980, now + 0.14);
+        gain.gain.setValueAtTime(0.12, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+        osc.start(now);
+        osc.stop(now + 0.17);
+    } else if (type === 'eat') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(660, now);
+        osc.frequency.exponentialRampToValueAtTime(880, now + 0.08);
+        gain.gain.setValueAtTime(0.08, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+        osc.start(now);
+        osc.stop(now + 0.1);
+    } else if (type === 'coin') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(987.77, now);
+        osc.frequency.setValueAtTime(1318.51, now + 0.07);
+        gain.gain.setValueAtTime(0.11, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+        osc.start(now);
+        osc.stop(now + 0.3);
+    } else if (type === 'hatch') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(440, now);
+        osc.frequency.setValueAtTime(554.37, now + 0.08);
+        osc.frequency.setValueAtTime(659.25, now + 0.16);
+        osc.frequency.setValueAtTime(880, now + 0.24);
+        gain.gain.setValueAtTime(0.14, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+        osc.start(now);
+        osc.stop(now + 0.46);
+    }
+}
+
+function toggleMute() {
+    isMuted = !isMuted;
+    document.getElementById('mute-btn').textContent = isMuted ? '🔇' : '🔊';
+}
 
 // 4. Three.js 3D 水族箱場景建置
 let scene, camera, renderer;
-let tankGroup, fishGroup, foodGroup, decorGroup, bubbleGroup, plantGroup;
-let ambientLight, dirLight, pointLight1, pointLight2;
-let waterSurfaceMesh, sandCausticsMesh;
+let aquariumGroup, fishGroup, foodGroup, decorGroup, bubbleGroup;
+let ambientLight, dirLight, pointLight1, causticsMesh;
+let seaweeds = [];
 let godRays = [];
-const fishMeshes = new Map();
-const foodPellets = [];
-const bubbles = [];
-const seaweeds = [];
+let bubbles = [];
+let foodPellets = [];
+let fishMeshes = new Map();
+let decorMeshes = new Map();
 
-const TANK_W = 11.5;
-const TANK_H = 6.6;
-const TANK_D = 6.2;
-
-let camTheta = 0.25;
-let camPhi = 1.32;
-let camRadius = 15.5;
+let camTheta = 0.35;
+let camPhi = 1.28;
+let camRadius = 11.2;
 let isDragging = false;
 let dragMoved = false;
 let prevPointer = { x: 0, y: 0 };
+let initialPinchDist = null;
+let initialPinchRadius = 11.2;
 
-const raycaster = new THREE.Raycaster();
-const pointerNDC = new THREE.Vector2();
+let selectedFishId = null;
+let zenMode = false;
 
-function initThreeJS() {
+const TANK = {
+    w: 8.6,
+    h: 5.0,
+    d: 4.8,
+    waterTop: 2.25,
+    sandTop: -2.15
+};
+
+function initThree() {
     const container = document.getElementById('canvas-container');
     scene = new THREE.Scene();
-    scene.background = new THREE.Color('#081726');
-    scene.fog = new THREE.FogExp2('#081726', 0.022);
+    scene.background = new THREE.Color('#071828');
+    scene.fog = new THREE.FogExp2('#071828', 0.032);
 
-    camera = new THREE.PerspectiveCamera(42, container.clientWidth / container.clientHeight, 0.1, 100);
+    camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.1, 100);
     updateCameraPosition();
 
     renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.12;
+    renderer.toneMappingExposure = 1.15;
     container.appendChild(renderer.domElement);
 
-    ambientLight = new THREE.AmbientLight(0xbae6fd, 0.85);
+    ambientLight = new THREE.AmbientLight('#8ecae6', 0.95);
     scene.add(ambientLight);
 
-    dirLight = new THREE.DirectionalLight(0xffffff, 1.15);
-    dirLight.position.set(5, 12, 7);
+    dirLight = new THREE.DirectionalLight('#ffffff', 1.25);
+    dirLight.position.set(4, 10, 6);
     dirLight.castShadow = true;
     dirLight.shadow.mapSize.width = 1024;
     dirLight.shadow.mapSize.height = 1024;
     scene.add(dirLight);
 
-    pointLight1 = new THREE.PointLight(0x38bdf8, 0.9, 18);
-    pointLight1.position.set(-3.5, 2.5, 2);
+    pointLight1 = new THREE.PointLight('#38bdf8', 0.9, 18);
+    pointLight1.position.set(0, 3.2, 0);
     scene.add(pointLight1);
 
-    pointLight2 = new THREE.PointLight(0xf472b6, 0.5, 18);
-    pointLight2.position.set(3.5, -1, -2);
-    scene.add(pointLight2);
-
-    tankGroup = new THREE.Group();
+    aquariumGroup = new THREE.Group();
     fishGroup = new THREE.Group();
     foodGroup = new THREE.Group();
     decorGroup = new THREE.Group();
     bubbleGroup = new THREE.Group();
-    plantGroup = new THREE.Group();
 
-    scene.add(tankGroup, decorGroup, plantGroup, foodGroup, fishGroup, bubbleGroup);
+    scene.add(aquariumGroup);
+    scene.add(fishGroup);
+    scene.add(foodGroup);
+    scene.add(decorGroup);
+    scene.add(bubbleGroup);
 
     buildAquariumEnvironment();
-    setupControls(renderer.domElement);
-
-    window.addEventListener('resize', () => {
-        if (!container) return;
-        camera.aspect = container.clientWidth / container.clientHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(container.clientWidth, container.clientHeight);
-    });
+    setupControls();
+    window.addEventListener('resize', onWindowResize);
 }
 
-function updateCameraPosition() {
-    const x = camRadius * Math.sin(camPhi) * Math.sin(camTheta);
-    const y = camRadius * Math.cos(camPhi);
-    const z = camRadius * Math.sin(camPhi) * Math.cos(camTheta);
-    camera.position.set(x, y, z);
-    camera.lookAt(0, -0.2, 0);
+function createSandTexture() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#e7dcc8';
+    ctx.fillRect(0, 0, 256, 256);
+    for (let i = 0; i < 4500; i++) {
+        const x = Math.random() * 256;
+        const y = Math.random() * 256;
+        const shade = Math.random() > 0.5 ? 'rgba(180, 160, 130, 0.25)' : 'rgba(255, 250, 240, 0.35)';
+        ctx.fillStyle = shade;
+        ctx.fillRect(x, y, 2, 2);
+    }
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(3, 2);
+    return tex;
+}
+
+function createCausticsTexture() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, 256, 256);
+    ctx.strokeStyle = 'rgba(186, 230, 253, 0.32)';
+    ctx.lineWidth = 3;
+    for (let i = 0; i < 28; i++) {
+        const cx = Math.random() * 256;
+        const cy = Math.random() * 256;
+        const r = 18 + Math.random() * 38;
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.stroke();
+    }
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(2, 1.5);
+    return tex;
 }
 
 function buildAquariumEnvironment() {
-    const sandGeo = new THREE.BoxGeometry(TANK_W - 0.15, 0.55, TANK_D - 0.15, 24, 1, 16);
-    const pos = sandGeo.attributes.position;
-    for (let i = 0; i < pos.count; i++) {
-        if (pos.getY(i) > 0) {
-            const x = pos.getX(i);
-            const z = pos.getZ(i);
-            const ripple = Math.sin(x * 1.1) * 0.08 + Math.cos(z * 1.3) * 0.07;
-            pos.setY(i, pos.getY(i) + ripple);
+    const baseGeo = new THREE.BoxGeometry(TANK.w + 0.36, 0.28, TANK.d + 0.36);
+    const baseMat = new THREE.MeshStandardMaterial({ color: '#111827', roughness: 0.4, metalness: 0.6 });
+    const baseMesh = new THREE.Mesh(baseGeo, baseMat);
+    baseMesh.position.y = -TANK.h / 2 - 0.14;
+    aquariumGroup.add(baseMesh);
+
+    const rimGeo = new THREE.BoxGeometry(TANK.w + 0.24, 0.16, TANK.d + 0.24);
+    const rimMesh = new THREE.Mesh(rimGeo, baseMat);
+    rimMesh.position.y = TANK.h / 2 + 0.06;
+    aquariumGroup.add(rimMesh);
+
+    const sandGeo = new THREE.BoxGeometry(TANK.w - 0.06, 0.36, TANK.d - 0.06, 24, 1, 16);
+    const posAttr = sandGeo.attributes.position;
+    for (let i = 0; i < posAttr.count; i++) {
+        const y = posAttr.getY(i);
+        if (y > 0) {
+            const x = posAttr.getX(i);
+            const z = posAttr.getZ(i);
+            posAttr.setY(i, y + Math.sin(x * 1.1) * 0.05 + Math.cos(z * 1.4) * 0.04);
         }
     }
     sandGeo.computeVertexNormals();
-    const sandMat = new THREE.MeshStandardMaterial({
-        color: 0xe7d3b0,
-        roughness: 0.92,
-        metalness: 0.02
-    });
+    const sandMat = new THREE.MeshStandardMaterial({ map: createSandTexture(), roughness: 0.85 });
     const sandMesh = new THREE.Mesh(sandGeo, sandMat);
-    sandMesh.position.y = -TANK_H / 2 + 0.25;
+    sandMesh.position.y = -TANK.h / 2 + 0.18;
     sandMesh.receiveShadow = true;
-    tankGroup.add(sandMesh);
+    aquariumGroup.add(sandMesh);
 
-    const causticsCanvas = document.createElement('canvas');
-    causticsCanvas.width = 256;
-    causticsCanvas.height = 256;
-    const cCtx = causticsCanvas.getContext('2d');
-    cCtx.fillStyle = '#000000';
-    cCtx.fillRect(0, 0, 256, 256);
-    cCtx.strokeStyle = 'rgba(186, 230, 253, 0.45)';
-    cCtx.lineWidth = 3;
-    for (let i = 0; i < 28; i++) {
-        cCtx.beginPath();
-        cCtx.arc(Math.random() * 256, Math.random() * 256, 18 + Math.random() * 34, 0, Math.PI * 2);
-        cCtx.stroke();
-    }
-    const causticsTex = new THREE.CanvasTexture(causticsCanvas);
-    causticsTex.wrapS = THREE.RepeatWrapping;
-    causticsTex.wrapT = THREE.RepeatWrapping;
-    causticsTex.repeat.set(3, 2);
-
-    const causticsGeo = new THREE.PlaneGeometry(TANK_W - 0.3, TANK_D - 0.3);
+    const causticsGeo = new THREE.PlaneGeometry(TANK.w - 0.12, TANK.d - 0.12);
     const causticsMat = new THREE.MeshBasicMaterial({
-        map: causticsTex,
+        map: createCausticsTexture(),
         transparent: true,
-        opacity: 0.28,
+        opacity: 0.48,
         blending: THREE.AdditiveBlending,
         depthWrite: false
     });
-    sandCausticsMesh = new THREE.Mesh(causticsGeo, causticsMat);
-    sandCausticsMesh.rotation.x = -Math.PI / 2;
-    sandCausticsMesh.position.y = -TANK_H / 2 + 0.62;
-    tankGroup.add(sandCausticsMesh);
+    causticsMesh = new THREE.Mesh(causticsGeo, causticsMat);
+    causticsMesh.rotation.x = -Math.PI / 2;
+    causticsMesh.position.y = TANK.sandTop + 0.07;
+    aquariumGroup.add(causticsMesh);
 
-    const waterGeo = new THREE.PlaneGeometry(TANK_W - 0.1, TANK_D - 0.1, 24, 14);
-    waterGeo.rotateX(-Math.PI / 2);
-    const waterMat = new THREE.MeshPhysicalMaterial({
-        color: 0x38bdf8,
-        transparent: true,
-        opacity: 0.32,
-        roughness: 0.12,
-        metalness: 0.05,
-        side: THREE.DoubleSide
-    });
-    waterSurfaceMesh = new THREE.Mesh(waterGeo, waterMat);
-    waterSurfaceMesh.position.y = TANK_H / 2 - 0.35;
-    tankGroup.add(waterSurfaceMesh);
-
-    godRays = [];
-    const rayMat = new THREE.MeshBasicMaterial({
-        color: 0xbae6fd,
-        transparent: true,
-        opacity: 0.055,
-        blending: THREE.AdditiveBlending,
-        side: THREE.DoubleSide,
-        depthWrite: false
-    });
     for (let r = 0; r < 5; r++) {
-        const rayGeo = new THREE.PlaneGeometry(1.4 + (r % 2) * 0.6, TANK_H - 0.6);
-        const rayMesh = new THREE.Mesh(rayGeo, rayMat.clone());
-        rayMesh.position.set(-3.8 + r * 1.9, 0.1, -1.2 + (r % 2) * 1.4);
-        rayMesh.rotation.y = (r - 2) * 0.25;
-        rayMesh.rotation.z = -0.12;
-        tankGroup.add(rayMesh);
+        const rayGeo = new THREE.ConeGeometry(0.9 + r * 0.2, 4.3, 16, 1, true);
+        const rayMat = new THREE.MeshBasicMaterial({
+            color: '#bae6fd',
+            transparent: true,
+            opacity: 0.05,
+            side: THREE.DoubleSide,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        });
+        const rayMesh = new THREE.Mesh(rayGeo, rayMat);
+        rayMesh.position.set(-2.5 + r * 1.25, 0.15, -0.4 + (r % 2) * 0.7);
+        rayMesh.rotation.z = 0.08;
+        aquariumGroup.add(rayMesh);
         godRays.push({ mesh: rayMesh, phase: r * 1.3 });
     }
 
-    const backGeo = new THREE.PlaneGeometry(TANK_W, TANK_H);
-    const backMat = new THREE.MeshStandardMaterial({
-        color: 0x0c4a6e,
-        roughness: 0.85,
+    const waterGeo = new THREE.BoxGeometry(TANK.w - 0.04, TANK.h - 0.35, TANK.d - 0.04);
+    const waterMat = new THREE.MeshPhysicalMaterial({
+        color: '#0ea5e9',
         transparent: true,
-        opacity: 0.38
+        opacity: 0.14,
+        roughness: 0.1,
+        metalness: 0.05,
+        side: THREE.DoubleSide,
+        depthWrite: false
     });
-    const backWall = new THREE.Mesh(backGeo, backMat);
-    backWall.position.z = -TANK_D / 2;
-    tankGroup.add(backWall);
+    const waterMesh = new THREE.Mesh(waterGeo, waterMat);
+    waterMesh.position.y = -0.05;
+    aquariumGroup.add(waterMesh);
 
-    const glassBoxGeo = new THREE.BoxGeometry(TANK_W, TANK_H, TANK_D);
-    const edges = new THREE.EdgesGeometry(glassBoxGeo);
-    const lineMat = new THREE.LineBasicMaterial({ color: 0xa5f3fc, transparent: true, opacity: 0.42 });
-    const glassFrame = new THREE.LineSegments(edges, lineMat);
-    tankGroup.add(glassFrame);
+    const surfaceGeo = new THREE.PlaneGeometry(TANK.w - 0.08, TANK.d - 0.08);
+    const surfaceMat = new THREE.MeshPhysicalMaterial({
+        color: '#7dd3fc',
+        transparent: true,
+        opacity: 0.28,
+        roughness: 0.15,
+        side: THREE.DoubleSide
+    });
+    const surfaceMesh = new THREE.Mesh(surfaceGeo, surfaceMat);
+    surfaceMesh.rotation.x = -Math.PI / 2;
+    surfaceMesh.position.y = TANK.waterTop;
+    aquariumGroup.add(surfaceMesh);
 
-    const seaweedMat = new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.75 });
-    const plantSpots = [
-        [-4.5, -2.0], [-4.1, -1.6], [-3.6, -2.2],
-        [4.2, -1.9], [4.6, -1.4], [3.8, 1.8], [-4.3, 1.9]
+    const edgesGeo = new THREE.EdgesGeometry(new THREE.BoxGeometry(TANK.w, TANK.h, TANK.d));
+    const edgesMat = new THREE.LineBasicMaterial({ color: '#bae6fd', transparent: true, opacity: 0.45 });
+    const glassEdges = new THREE.LineSegments(edgesGeo, edgesMat);
+    aquariumGroup.add(glassEdges);
+
+    const rockMat = new THREE.MeshStandardMaterial({ color: '#475569', roughness: 0.85 });
+    const pebbleCoords = [
+        [-3.4, -1.6, 0.35], [-3.1, -1.3, 0.22], [3.3, 1.5, 0.3],
+        [3.0, 1.7, 0.18], [-1.2, -1.7, 0.25], [1.6, -1.6, 0.28]
     ];
-    plantSpots.forEach(([px, pz], idx) => {
-        const group = new THREE.Group();
-        const blades = 3 + (idx % 2);
-        for (let b = 0; b < blades; b++) {
-            const h = 1.6 + Math.random() * 1.4;
-            const bladeGeo = new THREE.ConeGeometry(0.11, h, 5);
-            bladeGeo.translate(0, h / 2, 0);
-            const blade = new THREE.Mesh(bladeGeo, seaweedMat);
-            blade.position.set((Math.random() - 0.5) * 0.25, 0, (Math.random() - 0.5) * 0.25);
-            blade.rotation.set((Math.random() - 0.5) * 0.2, 0, (Math.random() - 0.5) * 0.2);
-            group.add(blade);
-        }
-        group.position.set(px, -TANK_H / 2 + 0.28, pz);
-        plantGroup.add(group);
-        seaweeds.push({ group, speed: 1.2 + Math.random() * 0.8, phase: idx * 0.9 });
+    pebbleCoords.forEach(([x, z, r]) => {
+        const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(r, 1), rockMat);
+        rock.position.set(x, TANK.sandTop + r * 0.45, z);
+        rock.scale.set(1.2, 0.75, 1);
+        rock.castShadow = true;
+        rock.receiveShadow = true;
+        aquariumGroup.add(rock);
     });
 
-    const bubbleGeo = new THREE.SphereGeometry(0.055, 8, 8);
+    const weedPositions = [
+        [-3.5, -1.5, 1.8], [-3.2, -1.7, 1.4], [-3.6, -1.2, 1.2],
+        [3.4, -1.6, 1.9], [3.1, -1.4, 1.5], [3.5, -1.1, 1.3],
+        [-3.3, 1.5, 1.5], [1.2, -1.8, 1.3]
+    ];
+    weedPositions.forEach(([x, z, h], idx) => {
+        const segs = 6;
+        const bladeGeo = new THREE.PlaneGeometry(0.18, h, 1, segs);
+        bladeGeo.translate(0, h / 2, 0);
+        const bladeMat = new THREE.MeshStandardMaterial({
+            color: idx % 2 === 0 ? '#10b981' : '#059669',
+            roughness: 0.6,
+            side: THREE.DoubleSide
+        });
+        const blade = new THREE.Mesh(bladeGeo, bladeMat);
+        blade.position.set(x, TANK.sandTop, z);
+        blade.rotation.y = idx * 0.8;
+        aquariumGroup.add(blade);
+        seaweeds.push({ mesh: blade, phase: idx * 1.1, baseRotZ: 0 });
+    });
+
+    const bubbleGeo = new THREE.SphereGeometry(0.045, 8, 8);
     const bubbleMat = new THREE.MeshPhysicalMaterial({
-        color: 0xffffff,
+        color: '#e0f2fe',
         transparent: true,
         opacity: 0.55,
         roughness: 0.1
     });
     for (let i = 0; i < 24; i++) {
-        const bMesh = new THREE.Mesh(bubbleGeo, bubbleMat);
-        resetBubble(bMesh, true);
-        bubbleGroup.add(bMesh);
-        bubbles.push({
-            mesh: bMesh,
-            speed: 0.7 + Math.random() * 0.8,
-            wobbleOffset: Math.random() * Math.PI * 2
-        });
+        const b = new THREE.Mesh(bubbleGeo, bubbleMat);
+        b.position.set(
+            -3.3 + (Math.random() - 0.5) * 0.6,
+            TANK.sandTop + Math.random() * 4.2,
+            -1.5 + (Math.random() - 0.5) * 0.6
+        );
+        const s = 0.5 + Math.random() * 0.9;
+        b.scale.setScalar(s);
+        bubbleGroup.add(b);
+        bubbles.push({ mesh: b, speed: 0.45 + Math.random() * 0.55, wobble: Math.random() * 6.28 });
     }
 }
 
-function resetBubble(mesh, randomY) {
-    mesh.position.set(
-        -4.2 + (Math.random() - 0.5) * 0.7,
-        randomY ? (Math.random() - 0.5) * (TANK_H - 1.2) : -TANK_H / 2 + 0.4,
-        -2.0 + (Math.random() - 0.5) * 0.7
-    );
-    const s = 0.5 + Math.random() * 0.9;
-    mesh.scale.set(s, s, s);
-}
-
-// 5. 高擬真 3D 魚類生成引擎
+// 5. 高精細擬真 3D 魚體模型建構器
 const fishTextureCache = new Map();
 
 function getFishTextures(species, isShiny) {
-    const key = `${species.id}_${isShiny ? 'shiny' : 'norm'}`;
-    if (fishTextureCache.has(key)) return fishTextureCache.get(key);
+    const cacheKey = `${species.id}_${isShiny ? 'shiny' : 'norm'}`;
+    if (fishTextureCache.has(cacheKey)) return fishTextureCache.get(cacheKey);
 
-    const primary = isShiny ? '#fbbf24' : species.baseColor;
-    const secondary = isShiny ? '#ec4899' : species.secColor;
-    const finCol = isShiny ? '#fef08a' : species.finColor;
+    const baseCol = isShiny ? shiftHueHex(species.baseColor, 0.35) : species.baseColor;
+    const secCol = isShiny ? shiftHueHex(species.secColor, 0.35) : species.secColor;
+    const finCol = isShiny ? shiftHueHex(species.finColor, 0.35) : species.finColor;
 
-    const w = 512, h = 256;
-    const canvas = document.createElement('canvas');
-    canvas.width = w;
-    canvas.height = h;
-    const ctx = canvas.getContext('2d');
+    const bodyCanvas = document.createElement('canvas');
+    bodyCanvas.width = 512;
+    bodyCanvas.height = 256;
+    const ctx = bodyCanvas.getContext('2d');
 
-    const bumpCanvas = document.createElement('canvas');
-    bumpCanvas.width = w;
-    bumpCanvas.height = h;
-    const bCtx = bumpCanvas.getContext('2d');
-    bCtx.fillStyle = '#808080';
-    bCtx.fillRect(0, 0, w, h);
+    const grad = ctx.createLinearGradient(0, 0, 0, 256);
+    grad.addColorStop(0, darkenHex(baseCol, 0.35));
+    grad.addColorStop(0.45, baseCol);
+    grad.addColorStop(0.85, lightenHex(baseCol, 0.25));
+    grad.addColorStop(1, '#f8fafc');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 512, 256);
 
-    const bodyGrad = ctx.createLinearGradient(0, 0, 0, h);
-    bodyGrad.addColorStop(0, shadeHex(primary, -38));
-    bodyGrad.addColorStop(0.45, primary);
-    bodyGrad.addColorStop(0.82, mixHex(primary, '#f8fafc', 0.45));
-    bodyGrad.addColorStop(1, '#f1f5f9');
-    ctx.fillStyle = bodyGrad;
-    ctx.fillRect(0, 0, w, h);
+    if (species.id === 'koi_kohaku') {
+        ctx.fillStyle = '#f8fafc';
+        ctx.fillRect(0, 0, 512, 256);
+        ctx.fillStyle = secCol;
+        ctx.beginPath();
+        ctx.ellipse(90, 128, 34, 28, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(260, 110, 58, 42, 0.2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(390, 132, 42, 30, -0.1, 0, Math.PI * 2);
+        ctx.fill();
+    } else if (species.id === 'guppy') {
+        const guppyBody = ctx.createLinearGradient(0, 0, 512, 0);
+        guppyBody.addColorStop(0.0, isShiny ? '#fef08a' : '#dbeafe');
+        guppyBody.addColorStop(0.28, isShiny ? '#38bdf8' : '#34d399');
+        guppyBody.addColorStop(0.50, isShiny ? '#4c1d95' : '#1e3a8a');
+        guppyBody.addColorStop(0.80, isShiny ? '#312e81' : '#0b192c');
+        guppyBody.addColorStop(0.92, isShiny ? '#0d9488' : '#0f766e');
+        guppyBody.addColorStop(1.0, isShiny ? '#f43f5e' : '#ea580c');
+        ctx.fillStyle = guppyBody;
+        ctx.fillRect(0, 0, 512, 256);
 
-    const scaleR = species.bodyType === 'arowana' ? 16 : (species.bodyType === 'mola' ? 8 : 11);
-    for (let row = 0; row < h / scaleR + 2; row++) {
-        for (let col = 0; col < w / (scaleR * 1.4) + 2; col++) {
-            const cx = col * scaleR * 1.4 + (row % 2) * (scaleR * 0.7);
-            const cy = row * scaleR * 0.85;
+        const bellyGrad = ctx.createLinearGradient(0, 145, 0, 256);
+        bellyGrad.addColorStop(0, 'rgba(248, 250, 252, 0)');
+        bellyGrad.addColorStop(0.65, 'rgba(241, 245, 249, 0.88)');
+        bellyGrad.addColorStop(1, '#ffffff');
+        ctx.fillStyle = bellyGrad;
+        ctx.fillRect(0, 145, 235, 111);
 
+        ctx.fillStyle = 'rgba(244, 114, 182, 0.45)';
+        ctx.beginPath();
+        ctx.ellipse(125, 155, 22, 14, 0.2, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = isShiny ? 'rgba(56, 189, 248, 0.45)' : 'rgba(52, 211, 153, 0.35)';
+        for (let sx = 390; sx < 495; sx += 16) {
+            for (let sy = 75; sy < 185; sy += 16) {
+                ctx.beginPath();
+                ctx.arc(sx, sy, 6, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+    } else if (species.bodyType === 'clown') {
+        const stripes = [135, 275, 415];
+        const widths = [34, 42, 26];
+        stripes.forEach((sx, idx) => {
+            ctx.fillStyle = '#090d16';
+            ctx.fillRect(sx - widths[idx] / 2 - 5, 0, widths[idx] + 10, 256);
+            ctx.fillStyle = secCol;
+            ctx.fillRect(sx - widths[idx] / 2, 0, widths[idx], 256);
+        });
+    } else if (species.bodyType === 'tetra') {
+        ctx.fillStyle = species.id === 'zebra_danio' ? '#1e3a8a' : '#22d3ee';
+        ctx.fillRect(40, 86, 420, 14);
+        if (species.id === 'zebra_danio') {
+            ctx.fillRect(40, 114, 420, 12);
+            ctx.fillRect(40, 142, 420, 12);
+            ctx.fillRect(40, 170, 420, 10);
+        } else {
+            ctx.fillStyle = secCol;
+            ctx.fillRect(180, 115, 290, 95);
+        }
+    } else if (species.bodyType === 'tang') {
+        ctx.fillStyle = secCol;
+        ctx.beginPath();
+        ctx.ellipse(270, 105, 135, 58, 0.1, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = baseCol;
+        ctx.beginPath();
+        ctx.ellipse(265, 115, 65, 26, 0, 0, Math.PI * 2);
+        ctx.fill();
+    } else if (species.bodyType === 'angel') {
+        ctx.fillStyle = secCol;
+        [150, 265, 375].forEach(sx => {
+            ctx.globalAlpha = 0.78;
+            ctx.fillRect(sx, 0, 28, 256);
+        });
+        ctx.globalAlpha = 1;
+    } else if (species.bodyType === 'lion') {
+        ctx.fillStyle = secCol;
+        for (let x = 70; x < 470; x += 38) {
+            ctx.fillRect(x, 0, 16, 256);
+        }
+    } else if (species.bodyType === 'betta') {
+        const bGrad = ctx.createLinearGradient(0, 0, 512, 0);
+        bGrad.addColorStop(0, '#1e1b4b');
+        bGrad.addColorStop(0.5, secCol);
+        bGrad.addColorStop(1, baseCol);
+        ctx.fillStyle = bGrad;
+        ctx.fillRect(0, 0, 512, 256);
+    } else if (species.bodyType === 'mola') {
+        for (let i = 0; i < 120; i++) {
+            ctx.fillStyle = i % 2 === 0 ? 'rgba(255,255,255,0.16)' : 'rgba(15,23,42,0.18)';
             ctx.beginPath();
-            ctx.arc(cx, cy, scaleR, -Math.PI * 0.45, Math.PI * 0.45);
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.16)';
-            ctx.lineWidth = species.bodyType === 'arowana' ? 2.2 : 1.2;
-            ctx.stroke();
-
-            const bGrad = bCtx.createRadialGradient(cx - 2, cy, 1, cx, cy, scaleR);
-            bGrad.addColorStop(0, '#d4d4d4');
-            bGrad.addColorStop(0.85, '#9a9a9a');
-            bGrad.addColorStop(1, '#4a4a4a');
-            bCtx.beginPath();
-            bCtx.arc(cx, cy, scaleR * 0.95, 0, Math.PI * 2);
-            bCtx.fillStyle = bGrad;
-            bCtx.fill();
+            ctx.arc(Math.random() * 512, Math.random() * 256, 4 + Math.random() * 10, 0, Math.PI * 2);
+            ctx.fill();
         }
     }
 
-    if (species.bodyType === 'neon_tetra' || species.id === 'neon_tetra') {
-        ctx.fillStyle = secondary;
-        ctx.fillRect(0, h * 0.52, w * 0.65, h * 0.28);
-        const neonGrad = ctx.createLinearGradient(0, h * 0.36, 0, h * 0.5);
-        neonGrad.addColorStop(0, '#38bdf8');
-        neonGrad.addColorStop(0.5, '#a5f3fc');
-        neonGrad.addColorStop(1, '#0284c7');
-        ctx.fillStyle = neonGrad;
-        ctx.fillRect(w * 0.12, h * 0.36, w * 0.82, h * 0.13);
-    } else if (species.bodyType === 'clown') {
-        [0.24, 0.52, 0.82].forEach((posRatio, idx) => {
-            const bandW = idx === 1 ? 38 : 26;
-            const bx = w * posRatio - bandW / 2;
-            ctx.fillStyle = '#090d16';
-            ctx.fillRect(bx - 5, 0, bandW + 10, h);
-            ctx.fillStyle = secondary;
-            ctx.fillRect(bx, 0, bandW, h);
-        });
-    } else if (species.bodyType === 'tang') {
-        ctx.fillStyle = secondary;
-        ctx.beginPath();
-        ctx.ellipse(w * 0.55, h * 0.42, w * 0.28, h * 0.24, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = primary;
-        ctx.beginPath();
-        ctx.ellipse(w * 0.56, h * 0.44, w * 0.14, h * 0.11, 0, 0, Math.PI * 2);
-        ctx.fill();
-    } else if (species.id === 'discus') {
-        for (let y = 20; y < h; y += 26) {
-            ctx.strokeStyle = secondary;
-            ctx.lineWidth = 8;
-            ctx.beginPath();
-            ctx.moveTo(0, y);
-            ctx.bezierCurveTo(w * 0.33, y + 18, w * 0.66, y - 18, w, y);
-            ctx.stroke();
-        }
-    } else if (species.id === 'koi_kohaku') {
-        ctx.fillStyle = primary;
-        ctx.fillRect(0, 0, w, h);
-        ctx.fillStyle = secondary;
-        ctx.beginPath();
-        ctx.arc(w * 0.84, h * 0.5, 28, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.beginPath();
-        ctx.ellipse(w * 0.48, h * 0.45, 58, 36, 0.2, 0, Math.PI * 2);
-        ctx.fill();
-    } else if (species.bodyType === 'angel') {
-        [0.22, 0.44, 0.66, 0.85].forEach((posRatio, idx) => {
-            ctx.fillStyle = 'rgba(15, 23, 42, 0.78)';
-            ctx.fillRect(w * posRatio, 0, idx % 2 === 0 ? 22 : 14, h);
-        });
-    } else if (species.bodyType === 'lion') {
-        for (let x = 20; x < w; x += 28) {
-            ctx.fillStyle = secondary;
-            ctx.fillRect(x, 0, 11, h);
-        }
-    } else if (species.bodyType === 'arowana') {
-        for (let row = 1; row < h / scaleR; row++) {
-            for (let col = 1; col < w / (scaleR * 1.4); col++) {
-                const cx = col * scaleR * 1.4 + (row % 2) * (scaleR * 0.7);
-                const cy = row * scaleR * 0.85;
+    const scaleSize = species.bodyType === 'arowana' ? 28 : (species.bodyType === 'mola' ? 0 : 14);
+    if (scaleSize > 0) {
+        ctx.strokeStyle = species.bodyType === 'arowana' ? 'rgba(254, 240, 138, 0.55)' : 'rgba(255, 255, 255, 0.16)';
+        ctx.lineWidth = species.bodyType === 'arowana' ? 2.2 : 1.1;
+        for (let y = 16; y < 245; y += scaleSize * 0.75) {
+            const offset = (Math.floor(y / (scaleSize * 0.75)) % 2) * (scaleSize * 0.5);
+            for (let x = 65; x < 475; x += scaleSize) {
                 ctx.beginPath();
-                ctx.arc(cx, cy, scaleR * 0.75, -Math.PI * 0.4, Math.PI * 0.4);
-                ctx.strokeStyle = secondary;
-                ctx.lineWidth = 3.2;
+                ctx.arc(x + offset, y, scaleSize * 0.48, -Math.PI * 0.45, Math.PI * 0.45);
                 ctx.stroke();
             }
         }
-    } else if (species.bodyType === 'mola') {
-        for (let i = 0; i < 65; i++) {
-            ctx.fillStyle = i % 2 === 0 ? 'rgba(241,245,249,0.22)' : 'rgba(30,41,59,0.28)';
-            ctx.beginPath();
-            ctx.arc(Math.random() * w, Math.random() * h, 4 + Math.random() * 14, 0, Math.PI * 2);
-            ctx.fill();
-        }
-    } else if (species.bodyType === 'guppy') {
-        const tailGrad = ctx.createLinearGradient(0, 0, w * 0.55, 0);
-        tailGrad.addColorStop(0, secondary);
-        tailGrad.addColorStop(1, primary);
-        ctx.fillStyle = tailGrad;
-        ctx.fillRect(0, 0, w * 0.48, h);
-        for (let s = 0; s < 24; s++) {
-            ctx.fillStyle = '#0f172a';
-            ctx.beginPath();
-            ctx.arc(Math.random() * w * 0.45, Math.random() * h, 3 + Math.random() * 4, 0, Math.PI * 2);
-            ctx.fill();
+    }
+
+    const bumpCanvas = document.createElement('canvas');
+    bumpCanvas.width = 256;
+    bumpCanvas.height = 128;
+    const bCtx = bumpCanvas.getContext('2d');
+    bCtx.fillStyle = '#808080';
+    bCtx.fillRect(0, 0, 256, 128);
+    if (scaleSize > 0) {
+        const bScale = scaleSize * 0.5;
+        bCtx.strokeStyle = '#d4d4d4';
+        bCtx.lineWidth = 1.5;
+        for (let y = 8; y < 122; y += bScale * 0.75) {
+            const offset = (Math.floor(y / (bScale * 0.75)) % 2) * (bScale * 0.5);
+            for (let x = 32; x < 238; x += bScale) {
+                bCtx.beginPath();
+                bCtx.arc(x + offset, y, bScale * 0.46, -Math.PI * 0.45, Math.PI * 0.45);
+                bCtx.stroke();
+            }
         }
     }
 
-    const fCanvas = document.createElement('canvas');
-    fCanvas.width = 256;
-    fCanvas.height = 256;
-    const fCtx = fCanvas.getContext('2d');
-    const fGrad = fCtx.createLinearGradient(0, 0, 256, 0);
-    fGrad.addColorStop(0, primary);
-    fGrad.addColorStop(0.55, finCol);
-    fGrad.addColorStop(1, 'rgba(255,255,255,0.25)');
-    fCtx.fillStyle = fGrad;
-    fCtx.fillRect(0, 0, 256, 256);
+    const finCanvas = document.createElement('canvas');
+    finCanvas.width = 256;
+    finCanvas.height = 256;
+    const fCtx = finCanvas.getContext('2d');
 
-    for (let r = 8; r < 256; r += 11) {
-        fCtx.beginPath();
-        fCtx.moveTo(0, r);
-        fCtx.quadraticCurveTo(128, r + (r - 128) * 0.18, 256, r + (r - 128) * 0.35);
+    if (species.id === 'guppy') {
+        const imgData = fCtx.createImageData(256, 256);
+        const data = imgData.data;
+
+        for (let py = 0; py < 256; py++) {
+            for (let px = 0; px < 256; px++) {
+                const rNorm = px / 255;
+                const thetaNorm = (py - 128) / 128;
+
+                let r = 255, g = 90, b = 15, a = 245;
+
+                if (rNorm < 0.14) {
+                    const t = rNorm / 0.14;
+                    r = isShiny ? 56 * (1 - t) + 190 * t : 15 * (1 - t) + 30 * t;
+                    g = isShiny ? 189 * (1 - t) + 40 * t : 45 * (1 - t) + 80 * t;
+                    b = isShiny ? 248 * (1 - t) + 210 * t : 95 * (1 - t) + 165 * t;
+                } else if (rNorm < 0.76) {
+                    const t = (rNorm - 0.14) / 0.62;
+                    r = isShiny ? (160 + t * 95) : 255;
+                    g = isShiny ? (30 + t * 140) : (68 + t * 88);
+                    b = isShiny ? (220 - t * 60) : (10 + t * 18);
+                } else if (rNorm < 0.90) {
+                    const t = (rNorm - 0.76) / 0.14;
+                    r = 255 * (1 - t) + 185 * t;
+                    g = 156 * (1 - t) + 245 * t;
+                    b = 28 * (1 - t) + 235 * t;
+                    a = 240 - t * 35;
+                } else {
+                    const t = (rNorm - 0.90) / 0.10;
+                    r = 215;
+                    g = 252;
+                    b = 248;
+                    a = Math.max(45, 205 * (1 - t * 0.78));
+                }
+
+                const rayWave = Math.sin(thetaNorm * 44);
+                if (rayWave > 0.35) {
+                    r = Math.min(255, r + 24);
+                    g = Math.min(255, g + 22);
+                    b = Math.min(255, b + 18);
+                }
+
+                if (rNorm > 0.16 && rNorm < 0.93) {
+                    const n1 = Math.sin(rNorm * 34 + Math.sin(thetaNorm * 14) * 1.4);
+                    const n2 = Math.cos(thetaNorm * 38 + Math.cos(rNorm * 22) * 1.3);
+                    const n3 = Math.sin((rNorm * 18 - thetaNorm * 26) * 1.7);
+                    const leopard = n1 * 0.42 + n2 * 0.38 + n3 * 0.25;
+
+                    if (leopard > 0.42) {
+                        const spotStrength = Math.min(1, (leopard - 0.42) * 4.2);
+                        r = r * (1 - spotStrength) + 12 * spotStrength;
+                        g = g * (1 - spotStrength) + 10 * spotStrength;
+                        b = b * (1 - spotStrength) + 14 * spotStrength;
+                    }
+                }
+
+                const idx = (py * 256 + px) * 4;
+                data[idx] = r;
+                data[idx + 1] = g;
+                data[idx + 2] = b;
+                data[idx + 3] = a;
+            }
+        }
+        fCtx.putImageData(imgData, 0, 0);
+    } else {
+        const fGrad = fCtx.createLinearGradient(0, 128, 256, 128);
+        fGrad.addColorStop(0, baseCol);
+        fGrad.addColorStop(0.65, finCol);
+        fGrad.addColorStop(1, 'rgba(255, 255, 255, 0.2)');
+        fCtx.fillStyle = fGrad;
+        fCtx.fillRect(0, 0, 256, 256);
+
         fCtx.strokeStyle = 'rgba(255, 255, 255, 0.32)';
-        fCtx.lineWidth = 1.6;
-        fCtx.stroke();
-    }
-    if (species.bodyType === 'guppy' || species.bodyType === 'betta') {
-        for (let d = 0; d < 26; d++) {
-            fCtx.fillStyle = species.bodyType === 'guppy' ? 'rgba(15,23,42,0.75)' : 'rgba(255,255,255,0.35)';
+        fCtx.lineWidth = 2;
+        for (let i = 0; i <= 256; i += 14) {
             fCtx.beginPath();
-            fCtx.arc(70 + Math.random() * 170, 20 + Math.random() * 216, 3 + Math.random() * 5, 0, Math.PI * 2);
-            fCtx.fill();
+            fCtx.moveTo(0, 128);
+            fCtx.lineTo(256, i);
+            fCtx.stroke();
         }
     }
 
-    const bodyTex = new THREE.CanvasTexture(canvas);
-    const bumpTex = new THREE.CanvasTexture(bumpCanvas);
-    const finTex = new THREE.CanvasTexture(fCanvas);
-    const result = { bodyTex, bumpTex, finTex, primary, secondary, finCol };
-    fishTextureCache.set(key, result);
+    const result = {
+        bodyTex: new THREE.CanvasTexture(bodyCanvas),
+        bumpTex: new THREE.CanvasTexture(bumpCanvas),
+        finTex: new THREE.CanvasTexture(finCanvas)
+    };
+    fishTextureCache.set(cacheKey, result);
     return result;
 }
 
-function shadeHex(hex, amt) {
-    const num = parseInt(hex.replace('#', ''), 16);
-    const r = Math.min(255, Math.max(0, (num >> 16) + amt));
-    const g = Math.min(255, Math.max(0, ((num >> 8) & 0x00FF) + amt));
-    const b = Math.min(255, Math.max(0, (num & 0x0000FF) + amt));
-    return `rgb(${r},${g},${b})`;
-}
-
-function mixHex(hex1, hex2, ratio) {
-    const n1 = parseInt(hex1.replace('#', ''), 16);
-    const n2 = parseInt(hex2.replace('#', ''), 16);
-    const r = Math.round(((n1 >> 16) * (1 - ratio)) + ((n2 >> 16) * ratio));
-    const g = Math.round((((n1 >> 8) & 0xff) * (1 - ratio)) + (((n2 >> 8) & 0xff) * ratio));
-    const b = Math.round(((n1 & 0xff) * (1 - ratio)) + ((n2 & 0xff) * ratio));
-    return `rgb(${r},${g},${b})`;
-}
-
-function buildSculptedBodyGeometry(bodyType) {
-    let sx = 0.22, sy = 0.28, sz = 0.62;
-    if (bodyType === 'goldfish') { sx = 0.34; sy = 0.38; sz = 0.56; }
-    else if (bodyType === 'angel') { sx = 0.11; sy = 0.54; sz = 0.50; }
-    else if (bodyType === 'tang') { sx = 0.14; sy = 0.44; sz = 0.62; }
-    else if (bodyType === 'arowana') { sx = 0.19; sy = 0.26; sz = 1.05; }
-    else if (bodyType === 'mola') { sx = 0.18; sy = 0.72; sz = 0.68; }
-    else if (bodyType === 'guppy' || bodyType === 'tetra') { sx = 0.16; sy = 0.20; sz = 0.52; }
-    else if (bodyType === 'betta') { sx = 0.17; sy = 0.24; sz = 0.56; }
-    else if (bodyType === 'lion') { sx = 0.25; sy = 0.34; sz = 0.62; }
-
-    const geo = new THREE.SphereGeometry(1, 28, 20);
+function createSculptedBodyGeometry(species) {
+    const segU = 28;
+    const segV = 18;
+    const geo = new THREE.SphereGeometry(0.5, segU, segV);
     const pos = geo.attributes.position;
-    const baseX = new Float32Array(pos.count);
-    const baseZ = new Float32Array(pos.count);
+
+    let len = 1.35, hScale = 0.56, wScale = 0.34;
+    if (species.bodyType === 'guppy') { len = 1.18; hScale = 0.42; wScale = 0.26; }
+    else if (species.bodyType === 'tetra') { len = 1.15; hScale = 0.40; wScale = 0.24; }
+    else if (species.bodyType === 'goldfish') { len = 1.25; hScale = 0.78; wScale = 0.54; }
+    else if (species.bodyType === 'clown') { len = 1.32; hScale = 0.62; wScale = 0.36; }
+    else if (species.bodyType === 'tang') { len = 1.38; hScale = 0.78; wScale = 0.22; }
+    else if (species.bodyType === 'angel') { len = 1.15; hScale = 0.96; wScale = 0.16; }
+    else if (species.bodyType === 'betta') { len = 1.28; hScale = 0.48; wScale = 0.26; }
+    else if (species.bodyType === 'lion') { len = 1.40; hScale = 0.66; wScale = 0.36; }
+    else if (species.bodyType === 'arowana') { len = 2.05; hScale = 0.48; wScale = 0.28; }
+    else if (species.bodyType === 'mola') { len = 1.35; hScale = 1.25; wScale = 0.24; }
 
     for (let i = 0; i < pos.count; i++) {
         let x = pos.getX(i);
         let y = pos.getY(i);
         let z = pos.getZ(i);
 
-        if (z > 0) {
-            const headTaper = 1.0 - Math.pow(z, 2.2) * 0.42;
-            x *= headTaper;
-            y *= (1.0 - Math.pow(z, 2.4) * 0.35);
-            if (bodyType === 'arowana' && y < 0) y *= 0.85;
+        const t = x + 0.5;
+        let profile = Math.sin(Math.pow(t, 0.78) * Math.PI);
+
+        if (species.bodyType === 'guppy') {
+            if (t > 0.72) {
+                const headT = (t - 0.72) / 0.28;
+                y += headT * 0.06;
+                profile *= (1 - headT * 0.35);
+            }
+            if (t < 0.35) {
+                profile = Math.max(0.28, profile * 1.15);
+            }
         } else {
-            const tailDist = Math.abs(z);
-            const peduncle = bodyType === 'mola'
-                ? (1.0 - Math.pow(tailDist, 1.5) * 0.25)
-                : (1.0 - Math.pow(tailDist, 1.45) * 0.76);
-            x *= Math.max(0.14, peduncle);
-            y *= Math.max(0.20, peduncle);
+            if (t < 0.22) {
+                profile = Math.max(0.14, profile * 0.85);
+            }
+            if (t > 0.82 && species.bodyType !== 'mola') {
+                profile *= 0.82;
+            }
         }
 
-        if (y > 0 && bodyType !== 'arowana') {
-            y += Math.sin((1 - Math.abs(z)) * Math.PI * 0.5) * 0.12;
-        }
+        const dorsalArch = (species.bodyType === 'goldfish' || species.bodyType === 'tang') && y > 0 ? 1.18 : 1.0;
 
-        const fx = x * sx;
-        const fy = y * sy;
-        const fz = z * sz;
-        pos.setXYZ(i, fx, fy, fz);
-        baseX[i] = fx;
-        baseZ[i] = fz;
+        const newZ = x * len;
+        const newY = y * hScale * dorsalArch * (0.35 + 0.75 * profile);
+        const newX = z * wScale * (0.3 + 0.8 * profile);
+
+        pos.setXYZ(i, newX, newY, newZ);
     }
+
     geo.computeVertexNormals();
-    geo.userData = { sx, sy, sz, baseX, baseZ, halfLen: sz };
-    return geo;
+    return { geo, len, hScale, wScale };
 }
 
-function buildTailFinGeometry(bodyType) {
-    const shape = new THREE.Shape();
-    if (bodyType === 'guppy' || bodyType === 'betta') {
-        const len = bodyType === 'betta' ? 0.68 : 0.62;
-        const h = bodyType === 'betta' ? 0.52 : 0.44;
-        shape.moveTo(0, 0.05);
-        shape.bezierCurveTo(-len * 0.45, h * 0.9, -len * 0.95, h, -len, h * 0.35);
-        shape.bezierCurveTo(-len * 1.08, 0, -len, -h * 0.35, -len, -h * 0.35);
-        shape.bezierCurveTo(-len * 0.95, -h, -len * 0.45, -h * 0.9, 0, -0.05);
-    } else if (bodyType === 'goldfish') {
-        shape.moveTo(0, 0.05);
-        shape.quadraticCurveTo(-0.35, 0.42, -0.68, 0.34);
-        shape.quadraticCurveTo(-0.48, 0.05, -0.45, 0);
-        shape.quadraticCurveTo(-0.48, -0.05, -0.68, -0.34);
-        shape.quadraticCurveTo(-0.35, -0.42, 0, -0.05);
-    } else if (bodyType === 'mola') {
-        shape.moveTo(0, 0.45);
-        shape.bezierCurveTo(-0.18, 0.3, -0.22, 0.1, -0.16, 0);
-        shape.bezierCurveTo(-0.22, -0.1, -0.18, -0.3, 0, -0.45);
-    } else if (bodyType === 'angel' || bodyType === 'tetra' || bodyType === 'tang') {
-        shape.moveTo(0, 0.06);
-        shape.lineTo(-0.38, 0.30);
-        shape.quadraticCurveTo(-0.26, 0, -0.38, -0.30);
-        shape.lineTo(0, -0.06);
+function buildTailFinGeometry(species) {
+    const s = new THREE.Shape();
+    s.moveTo(0, 0.04);
+
+    if (species.bodyType === 'guppy') {
+        s.lineTo(-0.56, 0.26);
+        s.quadraticCurveTo(-0.62, 0.14, -0.60, 0.05);
+        s.quadraticCurveTo(-0.64, -0.02, -0.60, -0.10);
+        s.quadraticCurveTo(-0.61, -0.20, -0.55, -0.27);
+        s.lineTo(0, -0.04);
+    } else if (species.bodyType === 'betta') {
+        s.bezierCurveTo(-0.25, 0.58, -0.85, 0.62, -0.92, 0.0);
+        s.bezierCurveTo(-0.85, -0.62, -0.25, -0.58, 0, -0.04);
+    } else if (species.bodyType === 'goldfish') {
+        s.bezierCurveTo(-0.35, 0.45, -0.82, 0.52, -0.86, 0.12);
+        s.quadraticCurveTo(-0.62, 0, -0.86, -0.15);
+        s.bezierCurveTo(-0.82, -0.52, -0.35, -0.45, 0, -0.04);
+    } else if (species.bodyType === 'angel') {
+        s.lineTo(-0.52, 0.34);
+        s.quadraticCurveTo(-0.32, 0.12, -0.36, 0);
+        s.quadraticCurveTo(-0.32, -0.12, -0.52, -0.34);
+        s.lineTo(0, -0.04);
+    } else if (species.bodyType === 'tetra') {
+        s.lineTo(-0.42, 0.22);
+        s.lineTo(-0.22, 0);
+        s.lineTo(-0.42, -0.22);
+        s.lineTo(0, -0.04);
+    } else if (species.bodyType === 'tang') {
+        s.lineTo(-0.36, 0.24);
+        s.quadraticCurveTo(-0.28, 0, -0.36, -0.24);
+        s.lineTo(0, -0.04);
+    } else if (species.bodyType === 'clown') {
+        s.bezierCurveTo(-0.22, 0.24, -0.42, 0.22, -0.42, 0);
+        s.bezierCurveTo(-0.42, -0.22, -0.22, -0.24, 0, -0.04);
+    } else if (species.bodyType === 'arowana') {
+        s.bezierCurveTo(-0.26, 0.26, -0.52, 0.24, -0.54, 0);
+        s.bezierCurveTo(-0.52, -0.24, -0.26, -0.26, 0, -0.04);
+    } else if (species.bodyType === 'mola') {
+        s.quadraticCurveTo(-0.18, 0.38, -0.14, 0.18);
+        s.quadraticCurveTo(-0.22, 0, -0.14, -0.18);
+        s.quadraticCurveTo(-0.18, -0.38, 0, -0.04);
     } else {
-        shape.moveTo(0, 0.07);
-        shape.quadraticCurveTo(-0.25, 0.28, -0.44, 0.22);
-        shape.quadraticCurveTo(-0.48, 0, -0.44, -0.22);
-        shape.quadraticCurveTo(-0.25, -0.28, 0, -0.07);
+        s.lineTo(-0.46, 0.26);
+        s.quadraticCurveTo(-0.36, 0, -0.46, -0.26);
+        s.lineTo(0, -0.04);
     }
-    shape.closePath();
+    s.closePath();
 
-    const geo = new THREE.ShapeGeometry(shape, 16);
-    geo.rotateY(Math.PI / 2);
+    const geo = new THREE.ShapeGeometry(s, 18);
+
+    geo.computeBoundingBox();
+    const minX = geo.boundingBox.min.x;
+    const maxX = geo.boundingBox.max.x;
+    const spanX = Math.max(0.001, maxX - minX);
+    const pos = geo.attributes.position;
+    const uv = geo.attributes.uv;
+    for (let i = 0; i < pos.count; i++) {
+        const px = pos.getX(i);
+        const py = pos.getY(i);
+        const r = Math.min(1, Math.hypot(px, py) / spanX);
+        const angle = Math.atan2(py, Math.max(0.001, -px));
+        const maxAngle = 0.72;
+        const vCoord = Math.max(0, Math.min(1, 0.5 + (angle / maxAngle) * 0.5));
+        uv.setXY(i, r, vCoord);
+    }
+    uv.needsUpdate = true;
+
+    geo.rotateY(-Math.PI / 2);
     return geo;
 }
 
-function buildDorsalAndAnalFins(bodyType, sz, sy, finMat) {
-    const group = new THREE.Group();
-
+function buildDorsalAndAnalFins(species, len, hScale) {
     const dShape = new THREE.Shape();
-    if (bodyType === 'angel') {
-        dShape.moveTo(sz * 0.25, 0);
-        dShape.quadraticCurveTo(-sz * 0.1, sy * 0.8, -sz * 0.45, sy * 1.45);
-        dShape.quadraticCurveTo(-sz * 0.35, sy * 0.4, -sz * 0.55, 0);
-    } else if (bodyType === 'mola') {
-        dShape.moveTo(-sz * 0.15, 0);
-        dShape.lineTo(-sz * 0.38, sy * 0.95);
-        dShape.lineTo(-sz * 0.58, 0);
-    } else if (bodyType === 'lion') {
-        dShape.moveTo(sz * 0.35, 0);
-        for (let s = 0; s < 6; s++) {
-            const xPeak = sz * (0.28 - s * 0.14);
-            const xVal = xPeak - sz * 0.07;
-            dShape.lineTo(xPeak, sy * (0.75 - s * 0.04));
-            dShape.lineTo(xVal, sy * 0.18);
-        }
-        dShape.lineTo(-sz * 0.55, 0);
-    } else if (bodyType === 'betta') {
-        dShape.moveTo(sz * 0.15, 0);
-        dShape.bezierCurveTo(-sz * 0.05, sy * 1.15, -sz * 0.55, sy * 1.15, -sz * 0.72, 0);
+    if (species.bodyType === 'guppy') {
+        dShape.moveTo(len * 0.04, hScale * 0.34);
+        dShape.bezierCurveTo(-len * 0.08, hScale * 0.85, -len * 0.42, hScale * 0.82, -len * 0.54, hScale * 0.52);
+        dShape.quadraticCurveTo(-len * 0.36, hScale * 0.40, -len * 0.28, hScale * 0.28);
+    } else if (species.bodyType === 'angel') {
+        dShape.moveTo(len * 0.1, hScale * 0.38);
+        dShape.bezierCurveTo(0, hScale * 1.1, -len * 0.25, hScale * 1.45, -len * 0.38, hScale * 1.55);
+        dShape.lineTo(-len * 0.32, hScale * 0.32);
+    } else if (species.bodyType === 'betta' || species.bodyType === 'lion') {
+        dShape.moveTo(len * 0.18, hScale * 0.36);
+        dShape.bezierCurveTo(0, hScale * 1.15, -len * 0.35, hScale * 1.15, -len * 0.46, hScale * 0.25);
+    } else if (species.bodyType === 'mola') {
+        dShape.moveTo(-len * 0.05, hScale * 0.44);
+        dShape.lineTo(-len * 0.22, hScale * 1.28);
+        dShape.lineTo(-len * 0.36, hScale * 0.40);
     } else {
-        dShape.moveTo(sz * 0.22, 0);
-        dShape.quadraticCurveTo(-sz * 0.08, sy * 0.72, -sz * 0.48, sy * 0.48);
-        dShape.lineTo(-sz * 0.52, 0);
+        dShape.moveTo(len * 0.12, hScale * 0.36);
+        dShape.quadraticCurveTo(-len * 0.08, hScale * 0.82, -len * 0.32, hScale * 0.28);
     }
     dShape.closePath();
-    const dGeo = new THREE.ShapeGeometry(dShape, 12);
-    dGeo.rotateY(Math.PI / 2);
-    const dorsal = new THREE.Mesh(dGeo, finMat);
-    dorsal.position.y = sy * 0.76;
-    group.add(dorsal);
+    const dorsalGeo = new THREE.ShapeGeometry(dShape);
+    dorsalGeo.rotateY(-Math.PI / 2);
 
     const aShape = new THREE.Shape();
-    if (bodyType === 'angel') {
-        aShape.moveTo(sz * 0.15, 0);
-        aShape.quadraticCurveTo(-sz * 0.15, -sy * 0.85, -sz * 0.48, -sy * 1.5);
-        aShape.quadraticCurveTo(-sz * 0.38, -sy * 0.4, -sz * 0.60, 0);
-    } else if (bodyType === 'mola') {
-        aShape.moveTo(-sz * 0.15, 0);
-        aShape.lineTo(-sz * 0.38, -sy * 0.95);
-        aShape.lineTo(-sz * 0.58, 0);
-    } else if (bodyType === 'betta') {
-        aShape.moveTo(sz * 0.25, 0);
-        aShape.bezierCurveTo(-sz * 0.1, -sy * 1.05, -sz * 0.65, -sy * 1.05, -sz * 0.75, 0);
+    if (species.bodyType === 'angel') {
+        aShape.moveTo(len * 0.05, -hScale * 0.38);
+        aShape.lineTo(-len * 0.36, -hScale * 1.5);
+        aShape.lineTo(-len * 0.30, -hScale * 0.30);
+    } else if (species.bodyType === 'mola') {
+        aShape.moveTo(-len * 0.05, -hScale * 0.44);
+        aShape.lineTo(-len * 0.22, -hScale * 1.28);
+        aShape.lineTo(-len * 0.36, -hScale * 0.40);
+    } else if (species.bodyType === 'betta') {
+        aShape.moveTo(len * 0.08, -hScale * 0.35);
+        aShape.bezierCurveTo(-len * 0.1, -hScale * 0.95, -len * 0.38, -hScale * 0.95, -len * 0.45, -hScale * 0.22);
     } else {
-        aShape.moveTo(-sz * 0.05, 0);
-        aShape.quadraticCurveTo(-sz * 0.32, -sy * 0.52, -sz * 0.58, -sy * 0.32);
-        aShape.lineTo(-sz * 0.62, 0);
+        aShape.moveTo(-len * 0.04, -hScale * 0.32);
+        aShape.quadraticCurveTo(-len * 0.20, -hScale * 0.65, -len * 0.36, -hScale * 0.22);
     }
     aShape.closePath();
-    const aGeo = new THREE.ShapeGeometry(aShape, 12);
-    aGeo.rotateY(Math.PI / 2);
-    const anal = new THREE.Mesh(aGeo, finMat);
-    anal.position.y = -sy * 0.72;
-    group.add(anal);
+    const analGeo = new THREE.ShapeGeometry(aShape);
+    analGeo.rotateY(-Math.PI / 2);
 
-    return group;
+    return { dorsalGeo, analGeo };
 }
 
-function createFish3DMesh(fishData) {
-    const species = FISH_SPECIES.find(s => s.id === fishData.speciesId) || FISH_SPECIES[0];
+function buildFishMesh(species, isShiny) {
     const root = new THREE.Group();
-    const texPack = getFishTextures(species, fishData.isShiny);
+    const { bodyTex, bumpTex, finTex } = getFishTextures(species, isShiny);
+    const { geo: bodyGeo, len, hScale, wScale } = createSculptedBodyGeometry(species);
 
-    const bodyGeo = buildSculptedBodyGeometry(species.bodyType);
-    const { sx, sy, sz } = bodyGeo.userData;
+    const basePositions = Float32Array.from(bodyGeo.attributes.position.array);
 
     const bodyMat = new THREE.MeshPhysicalMaterial({
-        map: texPack.bodyTex,
-        bumpMap: texPack.bumpTex,
-        bumpScale: species.bodyType === 'arowana' ? 0.032 : 0.016,
-        roughness: species.bodyType === 'mola' ? 0.55 : 0.24,
-        metalness: fishData.isShiny ? 0.48 : (species.bodyType === 'arowana' ? 0.38 : 0.12),
-        clearcoat: 0.85,
-        clearcoatRoughness: 0.12
+        map: bodyTex,
+        bumpMap: bumpTex,
+        bumpScale: species.bodyType === 'arowana' ? 0.025 : 0.012,
+        emissive: species.glowColor ? new THREE.Color(species.glowColor) : new THREE.Color(0x000000),
+        emissiveMap: species.glowColor ? bodyTex : null,
+        emissiveIntensity: species.glowColor ? (gameState.lighting === 'night' ? 0.85 : (gameState.lighting === 'sunset' ? 0.35 : 0.08)) : 0,
+        roughness: 0.26,
+        metalness: isShiny ? 0.42 : (species.bodyType === 'arowana' ? 0.32 : 0.08),
+        clearcoat: 0.75,
+        clearcoatRoughness: 0.14
     });
+
     const bodyMesh = new THREE.Mesh(bodyGeo, bodyMat);
     bodyMesh.castShadow = true;
-    bodyMesh.userData = { fishId: fishData.id };
     root.add(bodyMesh);
 
     const finMat = new THREE.MeshPhysicalMaterial({
-        map: texPack.finTex,
-        color: 0xffffff,
-        roughness: 0.32,
-        metalness: fishData.isShiny ? 0.3 : 0.05,
+        map: species.bodyType === 'guppy' ? finTex : null,
+        color: species.bodyType === 'guppy' ? 0xffffff : 0xffffff,
+        emissive: species.glowColor
+            ? new THREE.Color(species.glowColor)
+            : (species.bodyType === 'guppy' ? new THREE.Color(isShiny ? '#4c1d95' : '#7c2d12') : new THREE.Color(0x000000)),
+        emissiveIntensity: species.glowColor
+            ? (gameState.lighting === 'night' ? 0.75 : (gameState.lighting === 'sunset' ? 0.3 : 0.05))
+            : (species.bodyType === 'guppy' ? 0.28 : 0),
+        alphaMap: null,
         transparent: true,
-        opacity: species.bodyType === 'mola' ? 0.94 : 0.82,
-        side: THREE.DoubleSide,
-        depthWrite: false
+        opacity: species.bodyType === 'guppy' ? 0.94 : 0.82,
+        roughness: 0.25,
+        clearcoat: 0.6,
+        side: THREE.DoubleSide
     });
-
-    const tailPivot = new THREE.Group();
-    tailPivot.position.set(0, 0, -sz * 0.86);
-    const tailGeo = buildTailFinGeometry(species.bodyType);
-    const tailMesh = new THREE.Mesh(tailGeo, finMat);
-    tailPivot.add(tailMesh);
-    if (species.bodyType === 'goldfish') {
-        const tailL = tailMesh.clone();
-        tailL.rotation.y = 0.24;
-        tailL.rotation.z = 0.18;
-        const tailR = tailMesh.clone();
-        tailR.rotation.y = -0.24;
-        tailR.rotation.z = -0.18;
-        tailPivot.remove(tailMesh);
-        tailPivot.add(tailL, tailR);
+    if (species.bodyType !== 'guppy') {
+        finMat.map = finTex;
     }
+
+    const tailGeo = buildTailFinGeometry(species);
+    const tailMesh = new THREE.Mesh(tailGeo, finMat);
+    const tailPivot = new THREE.Group();
+    tailPivot.position.set(0, 0, -len * 0.46);
+    tailPivot.add(tailMesh);
     root.add(tailPivot);
 
-    const verticalFins = buildDorsalAndAnalFins(species.bodyType, sz, sy, finMat);
-    root.add(verticalFins);
+    const { dorsalGeo, analGeo } = buildDorsalAndAnalFins(species, len, hScale);
+    let dorsalMat = finMat;
+    if (species.bodyType === 'guppy') {
+        dorsalMat = new THREE.MeshPhysicalMaterial({
+            color: isShiny ? '#bae6fd' : '#fef3c7',
+            emissive: isShiny ? '#0284c7' : '#d97706',
+            emissiveIntensity: 0.25,
+            transparent: true,
+            opacity: 0.88,
+            roughness: 0.25,
+            side: THREE.DoubleSide
+        });
+    }
+    const dorsalMesh = new THREE.Mesh(dorsalGeo, dorsalMat);
+    const analMesh = new THREE.Mesh(analGeo, dorsalMat);
+    root.add(dorsalMesh);
+    root.add(analMesh);
 
     const pecShape = new THREE.Shape();
-    const pecLen = species.bodyType === 'lion' ? 0.58 : (species.bodyType === 'arowana' ? 0.44 : 0.28);
     pecShape.moveTo(0, 0);
-    pecShape.quadraticCurveTo(-pecLen * 0.6, 0.12, -pecLen, 0.04);
-    pecShape.quadraticCurveTo(-pecLen * 0.8, -0.12, 0, -0.05);
-    pecShape.closePath();
-    const pecGeo = new THREE.ShapeGeometry(pecShape, 8);
-    pecGeo.rotateY(Math.PI / 2);
+    pecShape.quadraticCurveTo(-0.18, 0.08, -0.26, -0.04);
+    pecShape.quadraticCurveTo(-0.14, -0.12, 0, -0.02);
+    const pecGeo = new THREE.ShapeGeometry(pecShape);
+    pecGeo.rotateY(-Math.PI / 2);
 
-    const pecLeft = new THREE.Mesh(pecGeo, finMat);
-    pecLeft.position.set(sx * 0.82, -sy * 0.18, sz * 0.24);
-    pecLeft.rotation.set(0.15, 0.35, -0.35);
+    const pecPivotL = new THREE.Group();
+    pecPivotL.position.set(wScale * 0.42, -hScale * 0.14, len * 0.14);
+    const pecMeshL = new THREE.Mesh(pecGeo, finMat);
+    pecPivotL.add(pecMeshL);
+    root.add(pecPivotL);
 
-    const pecRight = new THREE.Mesh(pecGeo, finMat);
-    pecRight.position.set(-sx * 0.82, -sy * 0.18, sz * 0.24);
-    pecRight.rotation.set(0.15, -0.35, 0.35);
-    root.add(pecLeft, pecRight);
+    const pecPivotR = new THREE.Group();
+    pecPivotR.position.set(-wScale * 0.42, -hScale * 0.14, len * 0.14);
+    const pecMeshR = new THREE.Mesh(pecGeo, finMat);
+    pecPivotR.add(pecMeshR);
+    root.add(pecPivotR);
 
-    const gillGeo = new THREE.RingGeometry(sy * 0.22, sy * 0.32, 12, 1, -Math.PI * 0.42, Math.PI * 0.84);
-    gillGeo.rotateY(Math.PI / 2);
-    const gillMat = new THREE.MeshStandardMaterial({
-        color: shadeHex(texPack.primary, -55),
-        side: THREE.DoubleSide,
-        roughness: 0.4
-    });
-    const gillLeft = new THREE.Mesh(gillGeo, gillMat);
-    gillLeft.position.set(sx * 0.86, -sy * 0.04, sz * 0.36);
-    const gillRight = new THREE.Mesh(gillGeo, gillMat);
-    gillRight.position.set(-sx * 0.86, -sy * 0.04, sz * 0.36);
-    root.add(gillLeft, gillRight);
+    const gillGeo = new THREE.TorusGeometry(hScale * 0.22, 0.012, 6, 16, Math.PI * 0.85);
+    const gillMat = new THREE.MeshStandardMaterial({ color: darkenHex(species.baseColor, 0.45), roughness: 0.5 });
+    const gillL = new THREE.Mesh(gillGeo, gillMat);
+    gillL.position.set(wScale * 0.42, 0, len * 0.22);
+    gillL.rotation.set(0, Math.PI / 2, -Math.PI * 0.42);
+    const gillR = gillL.clone();
+    gillR.position.x = -wScale * 0.42;
+    root.add(gillL, gillR);
 
-    const eyeSize = species.bodyType === 'goldfish' ? 0.088 : 0.068;
-    const irisGeo = new THREE.SphereGeometry(eyeSize, 14, 14);
-    const irisMat = new THREE.MeshStandardMaterial({
-        color: fishData.isShiny ? 0xfde047 : 0xd97706,
-        metalness: 0.6,
+    const eyeRadius = species.bodyType === 'goldfish' ? 0.068 : 0.054;
+    const eyeScleraGeo = new THREE.SphereGeometry(eyeRadius, 12, 12);
+    const eyeIrisMat = new THREE.MeshStandardMaterial({
+        color: isShiny ? '#fde047' : '#e2e8f0',
+        metalness: 0.4,
         roughness: 0.2
     });
-    const pupilGeo = new THREE.SphereGeometry(eyeSize * 0.66, 12, 12);
-    const pupilMat = new THREE.MeshPhysicalMaterial({ color: 0x05080f, roughness: 0.05, clearcoat: 1.0 });
-    const glintGeo = new THREE.SphereGeometry(eyeSize * 0.22, 6, 6);
-    const glintMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const pupilGeo = new THREE.SphereGeometry(eyeRadius * 0.62, 10, 10);
+    const pupilMat = new THREE.MeshBasicMaterial({ color: '#05080f' });
 
     [-1, 1].forEach(side => {
         const eyeGroup = new THREE.Group();
-        const iris = new THREE.Mesh(irisGeo, irisMat);
+        const sclera = new THREE.Mesh(eyeScleraGeo, eyeIrisMat);
         const pupil = new THREE.Mesh(pupilGeo, pupilMat);
-        pupil.position.x = side * eyeSize * 0.46;
-        const glint = new THREE.Mesh(glintGeo, glintMat);
-        glint.position.set(side * eyeSize * 0.85, eyeSize * 0.28, eyeSize * 0.24);
-        eyeGroup.add(iris, pupil, glint);
-        eyeGroup.position.set(side * sx * 0.64, sy * 0.18, sz * 0.58);
+        pupil.position.set(side * eyeRadius * 0.48, 0, eyeRadius * 0.15);
+        eyeGroup.add(sclera, pupil);
+        eyeGroup.position.set(side * wScale * 0.34, hScale * 0.12, len * 0.34);
         root.add(eyeGroup);
     });
 
     if (species.bodyType === 'arowana') {
         const barbelGeo = new THREE.ConeGeometry(0.014, 0.22, 6);
-        barbelGeo.rotateX(Math.PI * 0.38);
-        const barbelMat = new THREE.MeshStandardMaterial({ color: texPack.secondary, metalness: 0.5, roughness: 0.3 });
-        [-1, 1].forEach(side => {
-            const barbel = new THREE.Mesh(barbelGeo, barbelMat);
-            barbel.position.set(side * 0.045, -sy * 0.14, sz * 0.98);
-            barbel.rotation.y = side * 0.28;
-            root.add(barbel);
-        });
+        barbelGeo.rotateX(Math.PI * 0.35);
+        const barbelMat = new THREE.MeshStandardMaterial({ color: species.finColor, metalness: 0.5 });
+        const bL = new THREE.Mesh(barbelGeo, barbelMat);
+        bL.position.set(0.04, -0.04, len * 0.52);
+        const bR = bL.clone();
+        bR.position.x = -0.04;
+        root.add(bL, bR);
     }
 
-    if (fishData.isShiny) {
-        const auraLight = new THREE.PointLight(0xfde047, 0.7, 2.8);
-        root.add(auraLight);
+    if (isShiny) {
+        const halo = new THREE.Mesh(
+            new THREE.RingGeometry(0.32, 0.38, 24),
+            new THREE.MeshBasicMaterial({ color: '#fde047', transparent: true, opacity: 0.45, side: THREE.DoubleSide })
+        );
+        halo.rotation.x = Math.PI / 2;
+        halo.position.y = hScale * 0.65;
+        root.add(halo);
     }
 
-    root.position.set(
-        (Math.random() - 0.5) * (TANK_W - 2.6),
-        (Math.random() - 0.5) * (TANK_H - 2.4),
-        (Math.random() - 0.5) * (TANK_D - 2.2)
-    );
-
-    const stageInfo = getFishStageInfo(fishData);
-    root.scale.setScalar(stageInfo.scale);
-
-    fishGroup.add(root);
-    fishMeshes.set(fishData.id, {
+    const meshState = {
         root,
         bodyGeo,
+        bodyMesh,
+        bodyMat,
+        finMat,
+        glowColor: species.glowColor || null,
         tailPivot,
-        pecLeft,
-        pecRight,
-        gillLeft,
-        gillRight,
-        species,
-        velocity: new THREE.Vector3((Math.random() - 0.5) * 0.8, 0, (Math.random() - 0.5) * 0.8),
-        targetPos: new THREE.Vector3(
-            (Math.random() - 0.5) * (TANK_W - 2.6),
-            (Math.random() - 0.5) * (TANK_H - 2.4),
-            (Math.random() - 0.5) * (TANK_D - 2.2)
-        ),
-        decisionTimer: Math.random() * 2,
-        swimPhase: Math.random() * Math.PI * 2,
-        currentRoll: 0
+        dorsalMesh,
+        pecPivotL,
+        pecPivotR,
+        gillL,
+        gillR,
+        basePositions,
+        bodyLen: len,
+        pos: new THREE.Vector3((Math.random() - 0.5) * 5, (Math.random() - 0.5) * 2.5, (Math.random() - 0.5) * 3),
+        vel: new THREE.Vector3((Math.random() - 0.5) * 0.8, 0, (Math.random() - 0.5) * 0.8),
+        target: new THREE.Vector3((Math.random() - 0.5) * 6, (Math.random() - 0.5) * 3, (Math.random() - 0.5) * 3.2),
+        swimPhase: Math.random() * 10,
+        decisionTimer: 1 + Math.random() * 3
+    };
+    root.position.copy(meshState.pos);
+    return meshState;
+}
+
+// 6. 3D 造景模型建構器
+function buildDecorMesh(decorId) {
+    const group = new THREE.Group();
+    if (decorId === 'driftwood') {
+        const woodMat = new THREE.MeshStandardMaterial({ color: '#5c4033', roughness: 0.9 });
+        const mossMat = new THREE.MeshStandardMaterial({ color: '#4d7c0f', roughness: 0.85 });
+        const branch1 = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.24, 1.8, 8), woodMat);
+        branch1.rotation.z = -0.65;
+        branch1.position.y = 0.55;
+        const branch2 = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.16, 1.3, 8), woodMat);
+        branch2.rotation.set(0.4, 0.3, 0.55);
+        branch2.position.set(0.3, 0.55, 0.1);
+        const moss = new THREE.Mesh(new THREE.SphereGeometry(0.24, 8, 8), mossMat);
+        moss.scale.set(1.4, 0.5, 1.1);
+        moss.position.set(-0.2, 0.65, 0);
+        group.add(branch1, branch2, moss);
+    } else if (decorId === 'coral') {
+        const coralMat = new THREE.MeshStandardMaterial({ color: '#fb7185', roughness: 0.65 });
+        const base = new THREE.Mesh(new THREE.DodecahedronGeometry(0.32, 1), coralMat);
+        base.position.y = 0.25;
+        group.add(base);
+        for (let i = 0; i < 6; i++) {
+            const limb = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.11, 0.75 + (i % 3) * 0.2, 7), coralMat);
+            const angle = (i / 6) * Math.PI * 2;
+            limb.position.set(Math.cos(angle) * 0.22, 0.62, Math.sin(angle) * 0.22);
+            limb.rotation.set(Math.sin(angle) * 0.45, 0, -Math.cos(angle) * 0.45);
+            group.add(limb);
+        }
+    } else if (decorId === 'volcano') {
+        const rockMat = new THREE.MeshStandardMaterial({ color: '#334155', roughness: 0.92 });
+        const lavaMat = new THREE.MeshBasicMaterial({ color: '#f97316' });
+        const cone = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.72, 0.95, 12), rockMat);
+        cone.position.y = 0.47;
+        const crater = new THREE.Mesh(new THREE.CircleGeometry(0.18, 12), lavaMat);
+        crater.rotation.x = -Math.PI / 2;
+        crater.position.y = 0.955;
+        group.add(cone, crater);
+    } else if (decorId === 'castle') {
+        const stoneMat = new THREE.MeshStandardMaterial({ color: '#94a3b8', roughness: 0.8 });
+        const roofMat = new THREE.MeshStandardMaterial({ color: '#0284c7', roughness: 0.5 });
+        const body = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.9, 0.75), stoneMat);
+        body.position.y = 0.45;
+        const tower = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.26, 1.35, 10), stoneMat);
+        tower.position.set(-0.35, 0.67, 0.25);
+        const roof = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.45, 10), roofMat);
+        roof.position.set(-0.35, 1.55, 0.25);
+        group.add(body, tower, roof);
+    } else if (decorId === 'lantern') {
+        const stoneMat = new THREE.MeshStandardMaterial({ color: '#64748b', roughness: 0.85 });
+        const glowMat = new THREE.MeshBasicMaterial({ color: '#fde047' });
+        const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.22, 0.75, 8), stoneMat);
+        pillar.position.y = 0.37;
+        const chamber = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.32, 0.36), glowMat);
+        chamber.position.y = 0.88;
+        const cap = new THREE.Mesh(new THREE.ConeGeometry(0.45, 0.32, 6), stoneMat);
+        cap.position.y = 1.18;
+        group.add(pillar, chamber, cap);
+    } else if (decorId === 'crystal') {
+        const cryMat = new THREE.MeshPhysicalMaterial({
+            color: '#38bdf8', emissive: '#0284c7', emissiveIntensity: 0.6,
+            roughness: 0.15, metalness: 0.1, transparent: true, opacity: 0.88
+        });
+        for (let i = 0; i < 5; i++) {
+            const h = 0.55 + (i % 3) * 0.32;
+            const shard = new THREE.Mesh(new THREE.OctahedronGeometry(0.18, 0), cryMat);
+            shard.scale.set(0.8, h * 2.2, 0.8);
+            const ang = (i / 5) * Math.PI * 2;
+            shard.position.set(Math.cos(ang) * 0.2, h * 0.45, Math.sin(ang) * 0.2);
+            shard.rotation.set(Math.sin(ang) * 0.25, ang, -Math.cos(ang) * 0.25);
+            group.add(shard);
+        }
+    }
+    group.traverse(obj => {
+        if (obj.isMesh) { obj.castShadow = true; obj.receiveShadow = true; }
+    });
+    return group;
+}
+
+// 7. 魚隻資料與生態模擬邏輯
+function createFishInstance(speciesId, isShiny = false, customName = null, initialGrowth = 0) {
+    const species = FISH_SPECIES.find(s => s.id === speciesId);
+    if (!species) return null;
+
+    const uid = 'fish_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+    const fishData = {
+        uid,
+        speciesId,
+        name: customName || species.name,
+        isShiny,
+        growthProgress: initialGrowth,
+        hunger: 100,
+        locked: false
+    };
+    gameState.fishes.push(fishData);
+    if (!gameState.discoveredSpecies.includes(speciesId)) {
+        gameState.discoveredSpecies.push(speciesId);
+    }
+    sync3DFishes();
+    return fishData;
+}
+
+function sync3DFishes() {
+    const activeIds = new Set(gameState.fishes.map(f => f.uid));
+    for (const [uid, mState] of fishMeshes.entries()) {
+        if (!activeIds.has(uid)) {
+            fishGroup.remove(mState.root);
+            fishMeshes.delete(uid);
+        }
+    }
+    gameState.fishes.forEach(fish => {
+        if (!fishMeshes.has(fish.uid)) {
+            const species = FISH_SPECIES.find(s => s.id === fish.speciesId);
+            const mState = buildFishMesh(species, fish.isShiny);
+            mState.root.userData.fishUid = fish.uid;
+            fishGroup.add(mState.root);
+            fishMeshes.set(fish.uid, mState);
+        }
+        const mState = fishMeshes.get(fish.uid);
+        const stageScale = 0.42 + (fish.growthProgress / 100) * 0.68;
+        mState.root.scale.setScalar(stageScale);
     });
 }
 
-function removeFish3DMesh(fishId) {
-    const entry = fishMeshes.get(fishId);
-    if (entry) {
-        fishGroup.remove(entry.root);
-        fishMeshes.delete(fishId);
-    }
-}
-
-function rebuildDecorations3D() {
-    while (decorGroup.children.length > 0) {
-        decorGroup.remove(decorGroup.children[0]);
-    }
-    const floorY = -TANK_H / 2 + 0.45;
-
-    if (gameState.decorations.includes('driftwood')) {
-        const woodMat = new THREE.MeshStandardMaterial({ color: 0x5c3a21, roughness: 0.9 });
-        const mossMat = new THREE.MeshStandardMaterial({ color: 0x4d7c0f, roughness: 0.85 });
-        const log1 = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.28, 2.4, 8), woodMat);
-        log1.position.set(-2.3, floorY + 0.5, -0.6);
-        log1.rotation.z = -0.85;
-        log1.rotation.y = 0.3;
-        const moss = new THREE.Mesh(new THREE.SphereGeometry(0.32, 8, 8), mossMat);
-        moss.scale.set(1.8, 0.5, 1.2);
-        moss.position.set(-2.1, floorY + 0.72, -0.55);
-        decorGroup.add(log1, moss);
-    }
-
-    if (gameState.decorations.includes('coral_reef')) {
-        const coralColors = [0xf43f5e, 0xfb923c, 0xc084fc];
-        coralColors.forEach((col, i) => {
-            const mat = new THREE.MeshStandardMaterial({ color: col, roughness: 0.65 });
-            for (let b = 0; b < 4; b++) {
-                const branch = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.12, 0.7 + Math.random() * 0.5, 7), mat);
-                branch.position.set(1.8 + i * 0.55 + (Math.random() - 0.5) * 0.3, floorY + 0.3, 0.8 + (Math.random() - 0.5) * 0.5);
-                branch.rotation.set((Math.random() - 0.5) * 0.5, 0, (Math.random() - 0.5) * 0.5);
-                decorGroup.add(branch);
-            }
-        });
-    }
-
-    if (gameState.decorations.includes('castle')) {
-        const stoneMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.8 });
-        const roofMat = new THREE.MeshStandardMaterial({ color: 0x0ea5e9, roughness: 0.5 });
-        const base = new THREE.Mesh(new THREE.BoxGeometry(1.3, 1.1, 1.1), stoneMat);
-        base.position.set(0, floorY + 0.5, -1.3);
-        const tower = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.36, 1.6, 10), stoneMat);
-        tower.position.set(-0.4, floorY + 0.8, -1.3);
-        const roof = new THREE.Mesh(new THREE.ConeGeometry(0.42, 0.65, 10), roofMat);
-        roof.position.set(-0.4, floorY + 1.9, -1.3);
-        decorGroup.add(base, tower, roof);
-    }
-
-    if (gameState.decorations.includes('volcano')) {
-        const rockMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.92 });
-        const lavaMat = new THREE.MeshBasicMaterial({ color: 0xf97316 });
-        const cone = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.72, 0.95, 12), rockMat);
-        cone.position.set(-1.3, floorY + 0.42, 1.1);
-        const crater = new THREE.Mesh(new THREE.CircleGeometry(0.21, 12), lavaMat);
-        crater.rotation.x = -Math.PI / 2;
-        crater.position.set(-1.3, floorY + 0.91, 1.1);
-        decorGroup.add(cone, crater);
-    }
-
-    if (gameState.decorations.includes('japanese_lantern')) {
-        const graniteMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.85 });
-        const warmGlowMat = new THREE.MeshBasicMaterial({ color: 0xfef08a });
-        const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.22, 0.85, 6), graniteMat);
-        pillar.position.set(1.2, floorY + 0.4, -1.2);
-        const box = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.32, 0.36), warmGlowMat);
-        box.position.set(1.2, floorY + 0.95, -1.2);
-        const cap = new THREE.Mesh(new THREE.ConeGeometry(0.42, 0.35, 6), graniteMat);
-        cap.position.set(1.2, floorY + 1.25, -1.2);
-        decorGroup.add(pillar, box, cap);
-    }
-
-    if (gameState.decorations.includes('crystal')) {
-        const crysMat = new THREE.MeshPhysicalMaterial({
-            color: 0x22d3ee,
-            emissive: 0x0891b2,
-            emissiveIntensity: 0.65,
-            roughness: 0.15,
-            transparent: true,
-            opacity: 0.88
-        });
-        for (let c = 0; c < 5; c++) {
-            const h = 0.6 + Math.random() * 0.9;
-            const shard = new THREE.Mesh(new THREE.ConeGeometry(0.14, h, 5), crysMat);
-            shard.position.set(2.4 + (Math.random() - 0.5) * 0.7, floorY + h / 2 - 0.1, -1.4 + (Math.random() - 0.5) * 0.6);
-            shard.rotation.set((Math.random() - 0.5) * 0.45, Math.random() * 3, (Math.random() - 0.5) * 0.45);
-            decorGroup.add(shard);
+function sync3DDecors() {
+    gameState.unlockedDecors.forEach(decorId => {
+        if (!decorMeshes.has(decorId)) {
+            const item = DECOR_ITEMS.find(d => d.id === decorId);
+            if (!item) return;
+            const mesh = buildDecorMesh(decorId);
+            mesh.position.set(item.pos.x, TANK.sandTop, item.pos.z);
+            decorGroup.add(mesh);
+            decorMeshes.set(decorId, mesh);
         }
-        const crysLight = new THREE.PointLight(0x22d3ee, 1.1, 5);
-        crysLight.position.set(2.4, floorY + 0.8, -1.4);
-        decorGroup.add(crysLight);
-    }
+    });
 }
 
-// 6. 遊戲邏輯與動畫迴圈
-const clock = new THREE.Clock();
-let passiveIncomeTimer = 0;
-let autoSaveTimer = 0;
-const PASSIVE_INTERVAL = 25; // 調慢被動金幣產出週期（每 25 秒結算一次）
-
-function getMaxCapacity() {
-    return 8 + (gameState.tankLevel - 1) * 4;
-}
-
-function getFishStageInfo(fish) {
-    const species = FISH_SPECIES.find(s => s.id === fish.speciesId) || FISH_SPECIES[0];
-    const ratio = Math.min(1, fish.growth / species.growthTime);
-    if (ratio < 0.35) {
-        return { stage: 'fry', label: '魚苗', scale: 0.48 + (ratio / 0.35) * 0.24, progress: Math.floor(ratio * 100), isAdult: false };
-    } else if (ratio < 1.0) {
-        return { stage: 'juvenile', label: '幼魚', scale: 0.72 + ((ratio - 0.35) / 0.65) * 0.28, progress: Math.floor(ratio * 100), isAdult: false };
-    } else {
-        return { stage: 'adult', label: '成魚 ✨', scale: 1.08, progress: 100, isAdult: true };
-    }
+function getFishStageLabel(progress) {
+    if (progress < 40) return '魚苗';
+    if (progress < 100) return '幼魚';
+    return '成魚 ✨';
 }
 
 function getFishSellValue(fish) {
-    const species = FISH_SPECIES.find(s => s.id === fish.speciesId) || FISH_SPECIES[0];
-    const stageInfo = getFishStageInfo(fish);
-    let mult = stageInfo.stage === 'fry' ? 0.5 : (stageInfo.stage === 'juvenile' ? 1.0 : 1.75);
+    const sp = FISH_SPECIES.find(s => s.id === fish.speciesId);
+    let mult = 0.35;
+    if (fish.growthProgress >= 100) mult = 1.0;
+    else if (fish.growthProgress >= 40) mult = 0.6;
     if (fish.isShiny) mult *= 2.5;
-    if (stageInfo.isAdult && gameState.decorations.includes('japanese_lantern')) mult *= 1.15;
-    return Math.round(species.basePrice * mult);
+    if (gameState.unlockedDecors.includes('castle')) mult *= 1.2;
+    if (gameState.unlockedDecors.includes('lantern')) mult *= 1.15;
+    return Math.round(sp.basePrice * mult);
 }
 
 function getFishPassiveIncome(fish) {
-    const species = FISH_SPECIES.find(s => s.id === fish.speciesId) || FISH_SPECIES[0];
-    const stageInfo = getFishStageInfo(fish);
-    if (!stageInfo.isAdult) return 0;
-    let rate = species.passiveRate;
-    if (fish.isShiny) rate *= 2;
-    const filterMult = 1 + ((gameState.filterLevel || 1) - 1) * 0.15;
-    rate *= filterMult;
-    if (gameState.decorations.includes('castle')) rate *= 1.2;
+    if (fish.growthProgress < 100) return 0;
+    const sp = FISH_SPECIES.find(s => s.id === fish.speciesId);
+    let rate = sp.passiveRate * (fish.isShiny ? 2 : 1);
+    rate *= (1 + (gameState.filterLevel - 1) * 0.2);
+    if (gameState.unlockedDecors.includes('coral')) rate *= 1.15;
+    if (gameState.unlockedDecors.includes('crystal')) rate *= 1.25;
     return Math.max(1, Math.round(rate));
 }
 
-function getTotalGrowthMultiplier() {
-    let mult = 1.0;
-    mult += ((gameState.heaterLevel || 1) - 1) * 0.18;
-    if (gameState.decorations.includes('volcano')) mult += 0.10;
-    if (gameState.decorations.includes('coral_reef')) mult += 0.15;
-    return mult;
+function spawnFoodAt(x, z) {
+    if (foodPellets.length >= 25) {
+        const oldest = foodPellets.shift();
+        foodGroup.remove(oldest.mesh);
+    }
+    const clampedX = Math.max(-TANK.w / 2 + 0.5, Math.min(TANK.w / 2 - 0.5, x));
+    const clampedZ = Math.max(-TANK.d / 2 + 0.5, Math.min(TANK.d / 2 - 0.5, z));
+
+    const pelletGeo = new THREE.SphereGeometry(0.065, 8, 8);
+    const pelletMat = new THREE.MeshStandardMaterial({
+        color: gameState.foodLevel > 1 ? '#34d399' : '#d97706',
+        roughness: 0.4
+    });
+    const mesh = new THREE.Mesh(pelletGeo, pelletMat);
+    mesh.position.set(clampedX, TANK.waterTop - 0.05, clampedZ);
+    foodGroup.add(mesh);
+    foodPellets.push({ mesh, pos: mesh.position, age: 0 });
+    playSound('drop');
 }
 
-function animate() {
-    requestAnimationFrame(animate);
-    const rawDt = Math.min(clock.getDelta(), 0.05);
-    const dt = rawDt * timeScale;
-    const elapsed = clock.getElapsedTime();
+// 8. 互動控制：單指旋轉、雙指捏合縮放、點擊餵食與點選魚隻
+const raycaster = new THREE.Raycaster();
+const pointerNDC = new THREE.Vector2();
 
-    if (waterSurfaceMesh) {
-        const pos = waterSurfaceMesh.geometry.attributes.position;
-        for (let i = 0; i < pos.count; i++) {
-            const x = pos.getX(i);
-            const z = pos.getZ(i);
-            pos.setY(i, Math.sin(x * 1.4 + elapsed * 1.8) * 0.04 + Math.cos(z * 1.4 + elapsed * 1.5) * 0.04);
-        }
-        pos.needsUpdate = true;
-    }
-
-    if (sandCausticsMesh && sandCausticsMesh.material.map) {
-        sandCausticsMesh.material.map.offset.x = Math.sin(elapsed * 0.35) * 0.25;
-        sandCausticsMesh.material.map.offset.y = elapsed * 0.06;
-    }
-    godRays.forEach(r => {
-        r.mesh.rotation.z = -0.12 + Math.sin(elapsed * 0.7 + r.phase) * 0.045;
-        r.mesh.material.opacity = 0.045 + Math.sin(elapsed * 1.2 + r.phase) * 0.015;
-    });
-
-    seaweeds.forEach(sw => {
-        sw.group.rotation.z = Math.sin(elapsed * sw.speed + sw.phase) * 0.14;
-        sw.group.rotation.x = Math.cos(elapsed * sw.speed * 0.8 + sw.phase) * 0.08;
-    });
-
-    bubbles.forEach(b => {
-        b.mesh.position.y += b.speed * dt;
-        b.mesh.position.x += Math.sin(elapsed * 3 + b.wobbleOffset) * 0.25 * dt;
-        if (b.mesh.position.y > TANK_H / 2 - 0.4) {
-            resetBubble(b.mesh, false);
-        }
-    });
-
-    for (let i = foodPellets.length - 1; i >= 0; i--) {
-        const p = foodPellets[i];
-        p.mesh.position.y += p.vy * dt;
-        p.mesh.position.x += Math.sin(elapsed * 4 + p.wobble) * 0.15 * dt;
-        if (p.mesh.position.y <= -TANK_H / 2 + 0.38) {
-            p.mesh.position.y = -TANK_H / 2 + 0.38;
-            p.vy = 0;
-            p.life = (p.life || 4.0) - dt;
-            if (p.life <= 0) {
-                foodGroup.remove(p.mesh);
-                foodPellets.splice(i, 1);
-            }
-        }
-    }
-    const totalGrowthMult = getTotalGrowthMultiplier();
-    const hungerDecayMult = gameState.decorations.includes('driftwood') ? 0.88 : 1.0;
-
-    gameState.fishes.forEach(fish => {
-        const entry = fishMeshes.get(fish.id);
-        if (!entry) return;
-
-        fish.hunger = Math.max(0, fish.hunger - dt * 0.65 * hungerDecayMult);
-        const hungerSpeedMult = fish.hunger > 20 ? 1.0 : 0.35;
-        fish.growth += dt * hungerSpeedMult * totalGrowthMult;
-
-        const stageInfo = getFishStageInfo(fish);
-        entry.root.scale.lerp(new THREE.Vector3(stageInfo.scale, stageInfo.scale, stageInfo.scale), 0.08);
-
-        let nearestFood = null;
-        let minDist = 999;
-        if (fish.hunger < 96 && foodPellets.length > 0) {
-            foodPellets.forEach(p => {
-                const d = entry.root.position.distanceTo(p.mesh.position);
-                if (d < minDist) {
-                    minDist = d;
-                    nearestFood = p;
-                }
-            });
-        }
-
-        let baseSpeed = entry.species.bodyType === 'mola' ? 0.75 : (entry.species.bodyType === 'lion' ? 0.9 : 1.32);
-        if (nearestFood) {
-            entry.targetPos.copy(nearestFood.mesh.position);
-            baseSpeed *= 1.75;
-
-            if (minDist < 0.58) {
-                fish.hunger = Math.min(100, fish.hunger + nearestFood.nutrition);
-                fish.growth += 4.5 * nearestFood.growthBonus;
-                const idx = foodPellets.indexOf(nearestFood);
-                if (idx > -1) {
-                    foodGroup.remove(nearestFood.mesh);
-                    foodPellets.splice(idx, 1);
-                }
-                sound.playEatPop();
-            }
-        } else {
-            entry.decisionTimer -= dt;
-            if (entry.decisionTimer <= 0 || entry.root.position.distanceTo(entry.targetPos) < 0.75) {
-                entry.targetPos.set(
-                    (Math.random() - 0.5) * (TANK_W - 2.3),
-                    (Math.random() - 0.5) * (TANK_H - 2.3),
-                    (Math.random() - 0.5) * (TANK_D - 1.9)
-                );
-                entry.decisionTimer = 2.4 + Math.random() * 3.6;
-            }
-        }
-
-        const dir = new THREE.Vector3().subVectors(entry.targetPos, entry.root.position);
-        const dist = dir.length();
-        const currentSpeed = entry.velocity.length();
-
-        if (dist > 0.05 && dt > 0) {
-            dir.normalize();
-            const desiredSpeed = dist < 1.1 && !nearestFood ? baseSpeed * 0.45 : baseSpeed;
-            entry.velocity.lerp(dir.multiplyScalar(desiredSpeed), Math.min(1, 0.045 * Math.max(1, timeScale * 0.4)));
-            entry.root.position.addScaledVector(entry.velocity, dt);
-
-            const forward = new THREE.Vector3(0, 0, 1).applyQuaternion(entry.root.quaternion);
-            const crossY = forward.x * dir.z - forward.z * dir.x;
-            const targetRoll = THREE.MathUtils.clamp(crossY * 0.55, -0.35, 0.35);
-            entry.currentRoll = THREE.MathUtils.lerp(entry.currentRoll, targetRoll, 0.08);
-
-            const lookTarget = entry.root.position.clone().add(entry.velocity);
-            const dummy = new THREE.Object3D();
-            dummy.position.copy(entry.root.position);
-            dummy.lookAt(lookTarget);
-            dummy.rotateZ(entry.currentRoll);
-            entry.root.quaternion.slerp(dummy.quaternion, 0.08);
-        }
-
-        // S 型魚身脊椎擺動與魚鰭律動
-        const speedFactor = Math.max(0.45, currentSpeed);
-        entry.swimPhase += dt * (4.2 + speedFactor * 4.5);
-        const posAttr = entry.bodyGeo.attributes.position;
-        const { baseX, baseZ, halfLen } = entry.bodyGeo.userData;
-        for (let i = 0; i < posAttr.count; i++) {
-            const zNorm = (halfLen - baseZ[i]) / (halfLen * 2);
-            const amp = Math.pow(Math.max(0, zNorm), 1.75) * 0.085;
-            const wave = Math.sin(entry.swimPhase - zNorm * 3.4);
-            posAttr.setX(i, baseX[i] + wave * amp);
-        }
-        posAttr.needsUpdate = true;
-
-        entry.tailPivot.rotation.y = Math.sin(entry.swimPhase - 2.4) * 0.45;
-        entry.pecLeft.rotation.y = 0.35 + Math.sin(entry.swimPhase * 0.7) * 0.25;
-        entry.pecRight.rotation.y = -0.35 - Math.sin(entry.swimPhase * 0.7) * 0.25;
-        const gillBreath = 0.06 + Math.sin(elapsed * 3.5 + entry.swimPhase * 0.2) * 0.04;
-        entry.gillLeft.rotation.y = gillBreath;
-        entry.gillRight.rotation.y = -gillBreath;
-
-        // 限制魚兒活動範圍不穿出玻璃缸
-        const boundX = TANK_W / 2 - 0.85;
-        const boundY = TANK_H / 2 - 0.85;
-        const boundZ = TANK_D / 2 - 0.75;
-        entry.root.position.x = THREE.MathUtils.clamp(entry.root.position.x, -boundX, boundX);
-        entry.root.position.y = THREE.MathUtils.clamp(entry.root.position.y, -boundY, boundY);
-        entry.root.position.z = THREE.MathUtils.clamp(entry.root.position.z, -boundZ, boundZ);
-    });
-
-    passiveIncomeTimer += dt;
-    if (passiveIncomeTimer >= PASSIVE_INTERVAL) {
-        passiveIncomeTimer = 0;
-        grantPassiveIncome();
-    }
-
-    autoSaveTimer += rawDt;
-    if (autoSaveTimer >= 15) {
-        autoSaveTimer = 0;
-        saveGame();
-    }
-
-    if (selectedFishId) {
-        updateInspectorLive();
-    }
-
-    renderer.render(scene, camera);
+function updateCameraPosition() {
+    camera.position.x = camRadius * Math.sin(camPhi) * Math.sin(camTheta);
+    camera.position.y = camRadius * Math.cos(camPhi);
+    camera.position.z = camRadius * Math.sin(camPhi) * Math.cos(camTheta);
+    camera.lookAt(0, -0.1, 0);
 }
 
-// 7. 攝影機控制與畫布點擊互動（支援手機單指順暢旋轉與雙指縮放）
-function setupControls(domElement) {
-    let pinchStartDist = 0;
-    let pinchStartRadius = camRadius;
-    let isTouchActive = false;
+function setupControls() {
+    const dom = renderer.domElement;
 
-    // 手機與平板專屬觸控支援（避免瀏覽器預設滑動干擾）
-    domElement.addEventListener('touchstart', (e) => {
-        isTouchActive = true;
-        if (e.touches.length === 1) {
-            isDragging = true;
-            dragMoved = false;
-            prevPointer = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-        } else if (e.touches.length === 2) {
-            isDragging = false;
-            dragMoved = true;
-            const dx = e.touches[0].clientX - e.touches[1].clientX;
-            const dy = e.touches[0].clientY - e.touches[1].clientY;
-            pinchStartDist = Math.hypot(dx, dy);
-            pinchStartRadius = camRadius;
-        }
-    }, { passive: false });
-
-    domElement.addEventListener('touchmove', (e) => {
-        e.preventDefault();
-        if (e.touches.length === 1 && isDragging) {
-            const dx = e.touches[0].clientX - prevPointer.x;
-            const dy = e.touches[0].clientY - prevPointer.y;
-            if (Math.abs(dx) > 5 || Math.abs(dy) > 5) dragMoved = true;
-            camTheta -= dx * 0.0095;
-            camPhi = Math.max(0.45, Math.min(Math.PI * 0.58, camPhi - dy * 0.0095));
-            updateCameraPosition();
-            prevPointer = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-        } else if (e.touches.length === 2 && pinchStartDist > 0) {
-            const dx = e.touches[0].clientX - e.touches[1].clientX;
-            const dy = e.touches[0].clientY - e.touches[1].clientY;
-            const dist = Math.hypot(dx, dy);
-            const scale = pinchStartDist / Math.max(10, dist);
-            camRadius = Math.max(8.5, Math.min(23, pinchStartRadius * scale));
-            updateCameraPosition();
-        }
-    }, { passive: false });
-
-    domElement.addEventListener('touchend', (e) => {
-        if (e.touches.length === 0) {
-            if (isDragging && !dragMoved && e.changedTouches.length > 0) {
-                handleCanvasTap(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
-            }
-            isDragging = false;
-            pinchStartDist = 0;
-            setTimeout(() => { isTouchActive = false; }, 100);
-        }
-    });
-
-    // 電腦滑鼠支援
-    domElement.addEventListener('mousedown', (e) => {
-        if (isTouchActive) return;
+    dom.addEventListener('mousedown', (e) => {
+        if (e.button !== 0) return;
         isDragging = true;
         dragMoved = false;
         prevPointer = { x: e.clientX, y: e.clientY };
     });
 
     window.addEventListener('mousemove', (e) => {
-        if (isTouchActive || !isDragging) return;
+        if (!isDragging) return;
         const dx = e.clientX - prevPointer.x;
         const dy = e.clientY - prevPointer.y;
-        if (Math.abs(dx) > 4 || Math.abs(dy) > 4) dragMoved = true;
-        camTheta -= dx * 0.0065;
-        camPhi = Math.max(0.45, Math.min(Math.PI * 0.58, camPhi - dy * 0.0065));
+        if (Math.hypot(dx, dy) > 4) dragMoved = true;
+        camTheta -= dx * 0.0075;
+        camPhi = Math.max(0.45, Math.min(1.62, camPhi - dy * 0.0075));
         updateCameraPosition();
         prevPointer = { x: e.clientX, y: e.clientY };
     });
 
     window.addEventListener('mouseup', (e) => {
-        if (isTouchActive) return;
-        if (isDragging && !dragMoved && e.target === domElement) {
+        if (!isDragging) return;
+        isDragging = false;
+        if (!dragMoved) {
             handleCanvasTap(e.clientX, e.clientY);
         }
-        isDragging = false;
     });
 
-    domElement.addEventListener('wheel', (e) => {
+    dom.addEventListener('wheel', (e) => {
         e.preventDefault();
-        camRadius = Math.max(8.5, Math.min(23, camRadius + e.deltaY * 0.01));
+        camRadius = Math.max(6.2, Math.min(16.5, camRadius + e.deltaY * 0.006));
         updateCameraPosition();
     }, { passive: false });
+
+    dom.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 1) {
+            isDragging = true;
+            dragMoved = false;
+            initialPinchDist = null;
+            prevPointer = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        } else if (e.touches.length === 2) {
+            isDragging = false;
+            dragMoved = true;
+            const dx = e.touches[0].clientX - e.touches[1].clientX;
+            const dy = e.touches[0].clientY - e.touches[1].clientY;
+            initialPinchDist = Math.hypot(dx, dy);
+            initialPinchRadius = camRadius;
+        }
+    }, { passive: false });
+
+    dom.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        if (e.touches.length === 1 && isDragging) {
+            const touch = e.touches[0];
+            const dx = touch.clientX - prevPointer.x;
+            const dy = touch.clientY - prevPointer.y;
+            if (Math.hypot(dx, dy) > 5) dragMoved = true;
+            camTheta -= dx * 0.011;
+            camPhi = Math.max(0.45, Math.min(1.62, camPhi - dy * 0.011));
+            updateCameraPosition();
+            prevPointer = { x: touch.clientX, y: touch.clientY };
+        } else if (e.touches.length === 2 && initialPinchDist) {
+            const dx = e.touches[0].clientX - e.touches[1].clientX;
+            const dy = e.touches[0].clientY - e.touches[1].clientY;
+            const dist = Math.hypot(dx, dy);
+            const scale = initialPinchDist / Math.max(10, dist);
+            camRadius = Math.max(6.2, Math.min(16.5, initialPinchRadius * scale));
+            updateCameraPosition();
+        }
+    }, { passive: false });
+
+    dom.addEventListener('touchend', (e) => {
+        if (e.touches.length === 0) {
+            if (isDragging && !dragMoved) {
+                handleCanvasTap(prevPointer.x, prevPointer.y);
+            }
+            isDragging = false;
+            initialPinchDist = null;
+        }
+    });
 }
 
 function handleCanvasTap(clientX, clientY) {
-    const rect = renderer.domElement.getBoundingClientRect();
-    pointerNDC.x = ((clientX - rect.left) / rect.width) * 2 - 1;
-    pointerNDC.y = -((clientY - rect.top) / rect.height) * 2 + 1;
-
+    initAudio();
+    pointerNDC.x = (clientX / window.innerWidth) * 2 - 1;
+    pointerNDC.y = -(clientY / window.innerHeight) * 2 + 1;
     raycaster.setFromCamera(pointerNDC, camera);
 
     const fishHits = raycaster.intersectObjects(fishGroup.children, true);
     if (fishHits.length > 0) {
         let obj = fishHits[0].object;
-        while (obj && !obj.userData?.fishId) {
+        while (obj && !obj.userData.fishUid) {
             obj = obj.parent;
         }
-        if (obj && obj.userData?.fishId) {
-            openFishInspector(obj.userData.fishId);
+        if (obj && obj.userData.fishUid) {
+            openInspector(obj.userData.fishUid);
             return;
         }
     }
 
-    if (selectedFishId) {
-        closeInspector();
-    }
-
-    const hitPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
-    const targetPoint = new THREE.Vector3();
-    if (raycaster.ray.intersectPlane(hitPlane, targetPoint)) {
-        const fx = THREE.MathUtils.clamp(targetPoint.x, -TANK_W / 2 + 0.8, TANK_W / 2 - 0.8);
-        const fy = THREE.MathUtils.clamp(Math.max(targetPoint.y, 0.5), -TANK_H / 2 + 1.5, TANK_H / 2 - 0.5);
-        const fz = THREE.MathUtils.clamp((Math.random() - 0.5) * (TANK_D - 1.6), -TANK_D / 2 + 0.8, TANK_D / 2 - 0.8);
-        spawnFoodPellet(fx, fy, fz);
-    }
-}
-
-function spawnFoodPellet(x, y, z) {
-    if (foodPellets.length >= 22) {
-        const oldest = foodPellets.shift();
-        foodGroup.remove(oldest.mesh);
-    }
-    const foodColors = [0xd97706, 0x10b981, 0xec4899, 0xfbbf24];
-    const col = foodColors[Math.min(gameState.foodLevel - 1, foodColors.length - 1)];
-    const geo = new THREE.SphereGeometry(0.085, 8, 8);
-    const mat = new THREE.MeshStandardMaterial({ color: col, roughness: 0.4 });
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.set(x, y, z);
-    foodGroup.add(mesh);
-
-    foodPellets.push({
-        mesh,
-        vy: -0.65 - Math.random() * 0.25,
-        wobble: Math.random() * Math.PI * 2,
-        nutrition: 25 + (gameState.foodLevel - 1) * 10,
-        growthBonus: 1 + (gameState.foodLevel - 1) * 0.35
-    });
-    sound.playWaterDrop();
-}
-
-// 8. 經濟系統、收益、互動提示
-function grantPassiveIncome() {
-    let total = 0;
-    gameState.fishes.forEach(fish => {
-        const inc = getFishPassiveIncome(fish);
-        if (inc > 0) {
-            total += inc;
-            const entry = fishMeshes.get(fish.id);
-            if (entry && !isZenMode) {
-                spawnFloatingCoinText(entry.root.position, `+${inc}`);
-            }
+    const waterPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -TANK.waterTop);
+    const hitPoint = new THREE.Vector3();
+    if (raycaster.ray.intersectPlane(waterPlane, hitPoint)) {
+        if (Math.abs(hitPoint.x) <= TANK.w / 2 && Math.abs(hitPoint.z) <= TANK.d / 2) {
+            spawnFoodAt(hitPoint.x, hitPoint.z);
+            return;
         }
-    });
-    if (total > 0) {
-        gameState.coins += total;
-        updateHUD();
     }
+    spawnFoodAt((Math.random() - 0.5) * 4, (Math.random() - 0.5) * 2.5);
 }
 
-function spawnFloatingCoinText(worldPos, text) {
-    const projected = worldPos.clone().project(camera);
-    const x = (projected.x * 0.5 + 0.5) * window.innerWidth;
-    const y = (-(projected.y * 0.5) + 0.5) * window.innerHeight;
-    if (x < 0 || x > window.innerWidth || y < 0 || y > window.innerHeight) return;
-
-    const el = document.createElement('div');
-    el.className = 'coin-float fixed text-xs sm:text-sm font-bold text-amber-300 drop-shadow';
-    el.style.left = `${x}px`;
-    el.style.top = `${y - 16}px`;
-    el.textContent = `🪙 ${text}`;
-    document.getElementById('floating-texts').appendChild(el);
-    setTimeout(() => el.remove(), 1300);
-}
-
-function showToast(msg) {
-    const toast = document.getElementById('toast-msg');
-    document.getElementById('toast-text').textContent = msg;
-    toast.classList.remove('opacity-0');
-    clearTimeout(toast._timer);
-    toast._timer = setTimeout(() => toast.classList.add('opacity-0'), 2200);
-}
-
-function updateHUD() {
-    document.getElementById('hud-coins').textContent = gameState.coins.toLocaleString();
-    document.getElementById('hud-capacity').textContent = `${gameState.fishes.length} / ${getMaxCapacity()}`;
-    let totalIncome = 0;
-    gameState.fishes.forEach(f => totalIncome += getFishPassiveIncome(f));
-    document.getElementById('hud-income').textContent = `+${totalIncome} / ${PASSIVE_INTERVAL}秒`;
-}
-
-// 9. UI 面板互動
-function setLighting(mode) {
-    gameState.lighting = mode;
-    ['day', 'sunset', 'night'].forEach(m => {
-        const btn = document.getElementById(`btn-light-${m}`);
-        if (m === mode) {
-            btn.classList.add('bg-cyan-500/30', 'text-white');
-            btn.classList.remove('text-slate-300');
-        } else {
-            btn.classList.remove('bg-cyan-500/30', 'text-white');
-            btn.classList.add('text-slate-300');
-        }
-    });
-
-    if (mode === 'day') {
-        scene.background.set('#081726');
-        scene.fog.color.set('#081726');
-        ambientLight.color.set('#bae6fd');
-        ambientLight.intensity = 0.85;
-        dirLight.color.set('#ffffff');
-        dirLight.intensity = 1.15;
-        pointLight1.color.set('#38bdf8');
-        pointLight2.color.set('#f472b6');
-    } else if (mode === 'sunset') {
-        scene.background.set('#1f1226');
-        scene.fog.color.set('#1f1226');
-        ambientLight.color.set('#fdba74');
-        ambientLight.intensity = 0.78;
-        dirLight.color.set('#fb923c');
-        dirLight.intensity = 1.1;
-        pointLight1.color.set('#f43f5e');
-        pointLight2.color.set('#fbbf24');
-    } else if (mode === 'night') {
-        scene.background.set('#030812');
-        scene.fog.color.set('#030812');
-        ambientLight.color.set('#1e3a8a');
-        ambientLight.intensity = 0.65;
-        dirLight.color.set('#38bdf8');
-        dirLight.intensity = 0.65;
-        pointLight1.color.set('#22d3ee');
-        pointLight2.color.set('#a855f7');
-    }
-    saveGame();
-}
-
-function toggleMute() {
-    gameState.muted = !gameState.muted;
-    document.getElementById('mute-btn').textContent = gameState.muted ? '🔇' : '🔊';
-    if (!gameState.muted) sound.playWaterDrop();
-    saveGame();
-}
-
-function toggleZenMode() {
-    isZenMode = !isZenMode;
-    const ids = ['top-hud', 'bottom-nav', 'hint-pill', 'right-dock'];
-    ids.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.classList.toggle('ui-hidden', isZenMode);
-    });
-    const restoreBtn = document.getElementById('restore-ui-btn');
-    if (restoreBtn) restoreBtn.classList.toggle('hidden', !isZenMode);
-    if (isZenMode) {
-        closeInspector();
-        closeModal();
-    }
-}
-
-const SPEED_OPTIONS = [0.5, 1, 3, 6];
-
+// 9. 時間流速控制與離線事件日誌介面
 function setTimeScaleByIndex(idx) {
-    const val = SPEED_OPTIONS[parseInt(idx, 10)] ?? 1;
-    setTimeScale(val);
+    const scale = SPEED_OPTIONS[parseInt(idx, 10)] ?? 1;
+    setTimeScale(scale);
 }
 
 function setTimeScale(val) {
-    timeScale = parseFloat(val);
-    const slider = document.getElementById('time-speed-slider');
-    const display = document.getElementById('speed-display');
-    const foundIdx = SPEED_OPTIONS.indexOf(timeScale);
-    if (slider && foundIdx !== -1) slider.value = foundIdx;
-    if (display) {
-        display.textContent = `${timeScale}X`;
+    const num = parseFloat(val);
+    gameState.timeScale = num;
+    const idx = SPEED_OPTIONS.indexOf(num);
+    if (idx !== -1) {
+        document.getElementById('time-speed-slider').value = idx;
     }
+    document.getElementById('speed-display').textContent = `${num}X`;
+    saveGame();
+}
+
+function renderOfflineReport() {
+    if (!offlineReportEvents || offlineReportEvents.length === 0) return;
+    const card = document.getElementById('offline-events-card');
+    const badge = document.getElementById('offline-duration-badge');
+    const list = document.getElementById('offline-events-list');
+
+    if (offlineElapsedMinutes >= 60) {
+        const hrs = Math.floor(offlineElapsedMinutes / 60);
+        const mins = offlineElapsedMinutes % 60;
+        badge.textContent = `離線經過：${hrs} 小時 ${mins} 分鐘`;
+    } else {
+        badge.textContent = `離線經過：${offlineElapsedMinutes} 分鐘`;
+    }
+
+    list.innerHTML = offlineReportEvents.map(ev => `
+        <li class="bg-white/5 border border-white/10 rounded-xl px-2.5 py-1.5 leading-relaxed">${ev}</li>
+    `).join('');
+
+    card.classList.remove('hidden');
 }
 
 function closeOfflineReport() {
-    const card = document.getElementById('offline-events-card');
-    if (card) card.classList.add('hidden');
+    document.getElementById('offline-events-card').classList.add('hidden');
+    offlineReportEvents = [];
 }
 
-function openFishInspector(fishId) {
-    selectedFishId = fishId;
-    closeOfflineReport();
-    const insp = document.getElementById('fish-inspector');
-    insp.classList.remove('hidden');
-    updateInspectorLive();
+// 10. UI 更新與互動功能
+function updateHUD() {
+    document.getElementById('hud-coins').textContent = gameState.coins.toLocaleString();
+    const maxCap = getMaxCapacity(gameState.tankLevel);
+    document.getElementById('hud-capacity').textContent = `${gameState.fishes.length} / ${maxCap}`;
+
+    let totalIncome = 0;
+    gameState.fishes.forEach(f => { totalIncome += getFishPassiveIncome(f); });
+    document.getElementById('hud-income').textContent = `+${totalIncome} / 25秒`;
+
+    if (selectedFishId) {
+        const fish = gameState.fishes.find(f => f.uid === selectedFishId);
+        if (fish) updateInspectorContent(fish);
+        else closeInspector();
+    }
+}
+
+function showToast(msg) {
+    const el = document.getElementById('toast-msg');
+    document.getElementById('toast-text').textContent = msg;
+    el.style.opacity = '1';
+    clearTimeout(window._toastTimer);
+    window._toastTimer = setTimeout(() => { el.style.opacity = '0'; }, 2400);
+}
+
+function spawnFloatingCoinText(worldPos, text) {
+    const vec = worldPos.clone().project(camera);
+    const x = (vec.x * 0.5 + 0.5) * window.innerWidth;
+    const y = (-(vec.y * 0.5) + 0.5) * window.innerHeight;
+    if (x < 0 || x > window.innerWidth || y < 0 || y > window.innerHeight) return;
+
+    const div = document.createElement('div');
+    div.className = 'coin-float fixed text-xs sm:text-sm font-bold text-amber-300 drop-shadow';
+    div.style.left = `${x}px`;
+    div.style.top = `${y}px`;
+    div.textContent = text;
+    document.getElementById('floating-texts').appendChild(div);
+    setTimeout(() => div.remove(), 1350);
+}
+
+function openInspector(uid) {
+    const fish = gameState.fishes.find(f => f.uid === uid);
+    if (!fish) return;
+    selectedFishId = uid;
+    const el = document.getElementById('fish-inspector');
+    el.classList.remove('hidden');
+    updateInspectorContent(fish);
+}
+
+function updateInspectorContent(fish) {
+    const sp = FISH_SPECIES.find(s => s.id === fish.speciesId);
+    const rMeta = RARITY_META[sp.rarity];
+    document.getElementById('insp-icon').textContent = sp.icon;
+    const nameInput = document.getElementById('insp-name-input');
+    if (document.activeElement !== nameInput) {
+        nameInput.value = fish.name;
+    }
+    const shinyBadge = document.getElementById('insp-shiny-badge');
+    if (fish.isShiny) shinyBadge.classList.remove('hidden');
+    else shinyBadge.classList.add('hidden');
+
+    document.getElementById('insp-species').textContent = `${sp.name} • ${rMeta.label}`;
+    document.getElementById('insp-stage').textContent = getFishStageLabel(fish.growthProgress);
+    const pct = Math.min(100, Math.floor(fish.growthProgress));
+    document.getElementById('insp-growth-pct').textContent = `${pct}%`;
+    document.getElementById('insp-growth-bar').style.width = `${pct}%`;
+
+    const hPct = Math.round(fish.hunger);
+    document.getElementById('insp-hunger-pct').textContent = `${hPct}%`;
+    document.getElementById('insp-hunger-bar').style.width = `${hPct}%`;
+
+    const baseP = sp.passiveRate * (fish.isShiny ? 2 : 1);
+    document.getElementById('insp-passive').textContent = `+${baseP} 🪙/25s`;
+
+    const lockBtn = document.getElementById('insp-lock-btn');
+    lockBtn.innerHTML = fish.locked ? '<span>🔒</span> <span>已上鎖</span>' : '<span>🔓</span> <span>未上鎖</span>';
+
+    const sellVal = getFishSellValue(fish);
+    const sellBtn = document.getElementById('insp-sell-btn');
+    document.getElementById('insp-sell-price').textContent = `出售 ${sellVal}`;
+    sellBtn.style.opacity = fish.locked ? '0.45' : '1';
 }
 
 function closeInspector() {
@@ -1883,80 +1990,114 @@ function closeInspector() {
     document.getElementById('fish-inspector').classList.add('hidden');
 }
 
-function updateInspectorLive() {
-    const fish = gameState.fishes.find(f => f.id === selectedFishId);
-    if (!fish) {
-        closeInspector();
-        return;
-    }
-    const species = FISH_SPECIES.find(s => s.id === fish.speciesId) || FISH_SPECIES[0];
-    const stageInfo = getFishStageInfo(fish);
-    const rarity = RARITY_STYLES[species.rarity];
-
-    document.getElementById('insp-icon').textContent = species.icon;
-    const nameInput = document.getElementById('insp-name-input');
-    if (document.activeElement !== nameInput) {
-        nameInput.value = fish.name;
-    }
-    document.getElementById('insp-shiny-badge').classList.toggle('hidden', !fish.isShiny);
-    document.getElementById('insp-species').textContent = `${species.name} • ${rarity.label}`;
-    document.getElementById('insp-stage').textContent = stageInfo.label;
-    document.getElementById('insp-growth-pct').textContent = `${stageInfo.progress}%`;
-    document.getElementById('insp-growth-bar').style.width = `${stageInfo.progress}%`;
-
-    const hungerPct = Math.round(fish.hunger);
-    document.getElementById('insp-hunger-pct').textContent = `${hungerPct}%`;
-    document.getElementById('insp-hunger-bar').style.width = `${hungerPct}%`;
-
-    const passive = getFishPassiveIncome(fish);
-    document.getElementById('insp-passive').textContent = stageInfo.isAdult ? `+${passive} 🪙/${PASSIVE_INTERVAL}s` : `成魚後開啟`;
-
-    const lockBtn = document.getElementById('insp-lock-btn');
-    lockBtn.innerHTML = fish.locked ? `<span>🔒</span> <span class="text-amber-300">已上鎖</span>` : `<span>🔓</span> <span>未上鎖</span>`;
-
-    const sellBtn = document.getElementById('insp-sell-btn');
-    const sellPrice = getFishSellValue(fish);
-    document.getElementById('insp-sell-price').textContent = fish.locked ? '已保護' : `出售 ${sellPrice}`;
-    sellBtn.disabled = fish.locked;
-    sellBtn.classList.toggle('opacity-40', fish.locked);
-}
-
 function renameSelectedFish(newName) {
-    const fish = gameState.fishes.find(f => f.id === selectedFishId);
-    if (fish && newName.trim()) {
-        fish.name = newName.trim();
+    const fish = gameState.fishes.find(f => f.uid === selectedFishId);
+    if (!fish) return;
+    const trimmed = newName.trim();
+    if (trimmed) {
+        fish.name = trimmed;
         saveGame();
-        showToast(`已將魚兒命名為「${fish.name}」`);
+        showToast(`已將魚兒命名為「${trimmed}」`);
     }
 }
 
 function toggleLockSelectedFish() {
-    const fish = gameState.fishes.find(f => f.id === selectedFishId);
-    if (fish) {
-        fish.locked = !fish.locked;
-        updateInspectorLive();
-        saveGame();
-    }
+    const fish = gameState.fishes.find(f => f.uid === selectedFishId);
+    if (!fish) return;
+    fish.locked = !fish.locked;
+    updateInspectorContent(fish);
+    saveGame();
 }
 
 function sellSelectedFish() {
-    const idx = gameState.fishes.findIndex(f => f.id === selectedFishId);
+    const idx = gameState.fishes.findIndex(f => f.uid === selectedFishId);
     if (idx === -1) return;
     const fish = gameState.fishes[idx];
     if (fish.locked) {
-        showToast('這隻魚已上鎖，請先解鎖再出售');
+        showToast('這隻魚已上鎖，請先解鎖後再出售');
         return;
     }
-    const price = getFishSellValue(fish);
-    gameState.coins += price;
+    const val = getFishSellValue(fish);
+    const mState = fishMeshes.get(fish.uid);
+    if (mState) spawnFloatingCoinText(mState.pos, `+${val} 🪙`);
+
+    gameState.coins += val;
     gameState.fishes.splice(idx, 1);
-    removeFish3DMesh(fish.id);
+    sync3DFishes();
     closeInspector();
     updateHUD();
-    sound.playCoinChime();
-    showToast(`出售「${fish.name}」獲得 ${price} 金幣！`);
+    playSound('coin');
+    saveGame();
+    showToast(`出售「${fish.name}」獲得 ${val} 金幣！`);
+}
+
+function setLighting(mode) {
+    gameState.lighting = mode;
+    ['day', 'sunset', 'night'].forEach(m => {
+        const btn = document.getElementById(`btn-light-${m}`);
+        if (m === mode) {
+            btn.className = 'px-2.5 py-1.5 rounded-xl text-xs font-medium transition bg-cyan-500/35 text-white shadow';
+        } else {
+            btn.className = 'px-2.5 py-1.5 rounded-xl text-xs font-medium transition text-slate-300 hover:text-white';
+        }
+    });
+
+    if (mode === 'day') {
+        scene.background.set('#071828');
+        scene.fog.color.set('#071828');
+        ambientLight.color.set('#8ecae6');
+        ambientLight.intensity = 0.95;
+        dirLight.color.set('#ffffff');
+        dirLight.intensity = 1.25;
+        pointLight1.color.set('#38bdf8');
+        pointLight1.intensity = 0.9;
+    } else if (mode === 'sunset') {
+        scene.background.set('#1f1224');
+        scene.fog.color.set('#1f1224');
+        ambientLight.color.set('#f4a261');
+        ambientLight.intensity = 0.85;
+        dirLight.color.set('#ff9e6d');
+        dirLight.intensity = 1.1;
+        pointLight1.color.set('#e76f51');
+        pointLight1.intensity = 0.95;
+    } else {
+        scene.background.set('#030812');
+        scene.fog.color.set('#030812');
+        ambientLight.color.set('#1e3a8a');
+        ambientLight.intensity = 0.55;
+        dirLight.color.set('#60a5fa');
+        dirLight.intensity = 0.45;
+        pointLight1.color.set('#22d3ee');
+        pointLight1.intensity = 1.35;
+    }
+
+    fishMeshes.forEach(mState => {
+        if (mState.glowColor) {
+            const bodyGlow = mode === 'night' ? 0.9 : (mode === 'sunset' ? 0.38 : 0.08);
+            const finGlow = mode === 'night' ? 0.8 : (mode === 'sunset' ? 0.32 : 0.05);
+            if (mState.bodyMat) mState.bodyMat.emissiveIntensity = bodyGlow;
+            if (mState.finMat) mState.finMat.emissiveIntensity = finGlow;
+        }
+    });
     saveGame();
 }
+
+function toggleZenMode() {
+    zenMode = !zenMode;
+    const targets = ['top-hud', 'right-dock', 'hint-pill', 'bottom-nav'];
+    targets.forEach(id => {
+        const el = document.getElementById(id);
+        if (zenMode) el.classList.add('ui-hidden');
+        else el.classList.remove('ui-hidden');
+    });
+    if (zenMode) closeInspector();
+    const restoreBtn = document.getElementById('restore-ui-btn');
+    if (zenMode) restoreBtn.classList.remove('hidden');
+    else restoreBtn.classList.add('hidden');
+}
+
+// 11. 商店、升級、造景與圖鑑視窗
+let currentModalTab = null;
 
 function openModal(tab) {
     currentModalTab = tab;
@@ -1971,113 +2112,81 @@ function closeModal() {
 }
 
 function renderModalContent() {
-    const titleEl = document.getElementById('modal-title');
     const iconEl = document.getElementById('modal-icon');
+    const titleEl = document.getElementById('modal-title');
     const bodyEl = document.getElementById('modal-body');
 
     if (currentModalTab === 'shop') {
         iconEl.textContent = '🛍️';
-        titleEl.textContent = '魚苗商店 (培育開箱)';
-        bodyEl.innerHTML = `
-            <div class="text-xs text-cyan-200/80 bg-cyan-500/10 border border-cyan-400/20 p-3 rounded-2xl">
-                💡 購買魚苗包後會立即放入水族箱，每隻魚都有機率誕生為稀有的 <strong>「✨ 異色變異 (Shiny)」</strong>，擁有雙倍收益與專屬金光！
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                ${SEED_PACKS.map(pack => `
-                    <div class="glass-light rounded-2xl p-4 flex flex-col justify-between">
-                        <div>
-                            <div class="text-3xl mb-2">${pack.icon}</div>
-                            <h3 class="font-bold text-sm text-white">${pack.name}</h3>
-                            <p class="text-xs text-slate-300 mt-1 leading-relaxed">${pack.desc}</p>
-                            <div class="mt-3 flex flex-wrap gap-1">
-                                ${pack.pool.map(item => {
-                                    const sp = FISH_SPECIES.find(s => s.id === item.id);
-                                    return `<span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-800/80 text-cyan-200">${sp.icon} ${sp.name}</span>`;
-                                }).join('')}
-                            </div>
+        titleEl.textContent = '魚苗商店（孵化新魚苗）';
+        bodyEl.innerHTML = SEED_PACKS.map(pack => `
+            <div class="glass-light rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div class="flex items-start gap-3">
+                    <div class="w-12 h-12 rounded-2xl bg-cyan-500/20 flex items-center justify-center text-2xl shrink-0 border border-cyan-400/30">${pack.icon}</div>
+                    <div>
+                        <div class="font-bold text-white text-sm sm:text-base">${pack.name}</div>
+                        <p class="text-xs text-slate-300 mt-0.5">${pack.desc}</p>
+                        <div class="flex flex-wrap gap-1 mt-2">
+                            ${pack.pool.map(p => {
+                                const sp = FISH_SPECIES.find(s => s.id === p.id);
+                                return `<span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-800/70 text-cyan-200">${sp.icon} ${sp.name}</span>`;
+                            }).join('')}
                         </div>
-                        <button onclick="buySeedPack('${pack.id}')" class="mt-4 w-full py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-slate-950 font-bold text-xs shadow-md transition">
-                            🪙 ${pack.price} 購買魚苗
-                        </button>
                     </div>
-                `).join('')}
+                </div>
+                <button onclick="buySeedPack('${pack.id}')" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-slate-950 font-bold text-xs sm:text-sm shrink-0 shadow-lg transition">
+                    購買 🪙 ${pack.price}
+                </button>
             </div>
-        `;
+        `).join('');
     } else if (currentModalTab === 'upgrades') {
         iconEl.textContent = '⚙️';
-        titleEl.textContent = '水族設備升級 (Lv.1 ~ Lv.5)';
-        const upgradesList = [
-            {
-                key: 'tankLevel', icon: '🐠', name: '擴建水族箱空間',
-                maxLv: 5, baseCost: 180,
-                desc: (lv) => `目前最大容量 ${8 + (lv - 1) * 4} 隻魚 → 升級後可容納 ${8 + lv * 4} 隻魚`
-            },
-            {
-                key: 'foodLevel', icon: '🍤', name: '營養飼料配方',
-                maxLv: 5, baseCost: 150,
-                desc: (lv) => `投餵飽食恢復 +${25 + (lv - 1) * 10}%，成長加成 +${(lv - 1) * 35}%`
-            },
-            {
-                key: 'filterLevel', icon: '🫧', name: '高效生物過濾系統',
-                maxLv: 5, baseCost: 220,
-                desc: (lv) => `水質清澈度提升，全體成魚被動金幣收益 +${(lv - 1) * 15}%`
-            },
-            {
-                key: 'heaterLevel', icon: '🌡️', name: '微電腦恆溫加熱棒',
-                maxLv: 5, baseCost: 200,
-                desc: (lv) => `維持最佳水溫，全魚缸魚苗成長速度 +${(lv - 1) * 18}%`
-            },
-            {
-                key: 'lightLevel', icon: '💡', name: '全光譜水草造景燈',
-                maxLv: 5, baseCost: 260,
-                desc: (lv) => `提升魚鱗光澤度，開出異色變異(Shiny)機率額外 +${(lv - 1) * 3}%`
-            }
-        ];
-
-        bodyEl.innerHTML = `
-            <div class="space-y-3">
-                ${upgradesList.map(u => {
-                    const curLv = gameState[u.key] || 1;
-                    const isMax = curLv >= u.maxLv;
-                    const cost = Math.round(u.baseCost * Math.pow(1.45, curLv - 1));
-                    return `
-                        <div class="glass-light rounded-2xl p-3.5 sm:p-4 flex items-center justify-between gap-3">
-                            <div>
-                                <div class="flex items-center gap-2">
-                                    <span class="text-sm font-bold text-white">${u.icon} ${u.name}</span>
-                                    <span class="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 font-bold">Lv.${curLv} / ${u.maxLv}</span>
-                                </div>
-                                <div class="text-xs text-slate-300 mt-1">${u.desc(curLv)}</div>
+        titleEl.textContent = '水族箱設備升級（Lv.1 ~ Lv.5）';
+        bodyEl.innerHTML = UPGRADES_DATA.map(upg => {
+            const curLv = gameState[upg.id] || 1;
+            const isMax = curLv >= upg.maxLevel;
+            const nextCost = isMax ? 0 : upg.costs[curLv];
+            return `
+                <div class="glass-light rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div class="flex items-start gap-3">
+                        <div class="w-12 h-12 rounded-2xl bg-emerald-500/20 flex items-center justify-center text-2xl shrink-0 border border-emerald-400/30">${upg.icon}</div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold text-white text-sm sm:text-base">${upg.name}</span>
+                                <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-400/20 text-emerald-300 font-semibold">Lv.${curLv} / ${upg.maxLevel}</span>
                             </div>
-                            ${isMax
-                                ? `<span class="shrink-0 px-3 py-2 rounded-xl bg-emerald-500/20 text-emerald-300 text-xs font-bold">已滿級</span>`
-                                : `<button onclick="upgradeEquipment('${u.key}', ${u.maxLv}, ${u.baseCost}, '${u.name}')" class="shrink-0 px-3.5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs transition">🪙 ${cost} 升級</button>`
-                            }
+                            <p class="text-xs text-slate-300 mt-1">${upg.desc(curLv)}</p>
                         </div>
-                    `;
-                }).join('')}
-            </div>
-        `;
+                    </div>
+                    ${isMax
+                        ? `<span class="px-4 py-2 rounded-xl bg-white/10 text-slate-400 text-xs font-semibold text-center">已達最高等級</span>`
+                        : `<button onclick="buyUpgrade('${upg.id}')" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-bold text-xs sm:text-sm shrink-0 shadow-lg transition">
+                            升級 Lv.${curLv + 1} (🪙 ${nextCost})
+                           </button>`
+                    }
+                </div>
+            `;
+        }).join('');
     } else if (currentModalTab === 'decor') {
         iconEl.textContent = '🪸';
-        titleEl.textContent = '都市水族造景與生態加成';
+        titleEl.textContent = '3D 水族造景佈置';
         bodyEl.innerHTML = `
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                ${DECORATIONS.map(dec => {
-                    const owned = gameState.decorations.includes(dec.id);
+                ${DECOR_ITEMS.map(item => {
+                    const owned = gameState.unlockedDecors.includes(item.id);
                     return `
-                        <div class="glass-light rounded-2xl p-4 flex flex-col justify-between">
+                        <div class="glass-light rounded-2xl p-4 flex flex-col justify-between gap-3">
                             <div>
                                 <div class="flex items-center justify-between">
-                                    <span class="text-3xl">${dec.icon}</span>
-                                    ${owned ? '<span class="text-xs px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 font-semibold">已擺設於缸中</span>' : ''}
+                                    <span class="text-3xl">${item.icon}</span>
+                                    ${owned ? '<span class="text-xs px-2.5 py-0.5 rounded-full bg-cyan-500/25 text-cyan-200 border border-cyan-400/30">已擺放於魚缸</span>' : ''}
                                 </div>
-                                <h3 class="font-bold text-sm text-white mt-2">${dec.name}</h3>
-                                <p class="text-xs text-cyan-200/80 mt-1">✨ 效果：${dec.bonusText}</p>
+                                <div class="font-bold text-white text-sm sm:text-base mt-2">${item.name}</div>
+                                <p class="text-xs text-emerald-300 mt-1">✨ ${item.bonusText}</p>
                             </div>
                             ${owned
-                                ? `<button disabled class="mt-3 w-full py-2 rounded-xl bg-white/5 text-slate-400 text-xs">已擁有</button>`
-                                : `<button onclick="buyDecoration('${dec.id}')" class="mt-3 w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-300 hover:to-teal-400 text-slate-950 font-bold text-xs transition">🪙 ${dec.price} 購買擺設</button>`
+                                ? `<button disabled class="w-full py-2 rounded-xl bg-white/10 text-slate-400 text-xs font-semibold">已擁有</button>`
+                                : `<button onclick="buyDecor('${item.id}')" class="w-full py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-bold text-xs sm:text-sm shadow transition">購買造景 🪙 ${item.price}</button>`
                             }
                         </div>
                     `;
@@ -2086,25 +2195,24 @@ function renderModalContent() {
         `;
     } else if (currentModalTab === 'dex') {
         iconEl.textContent = '📖';
-        titleEl.textContent = `魚類收藏圖鑑 (${gameState.discovered.length} / ${FISH_SPECIES.length})`;
+        titleEl.textContent = `觀賞魚類圖鑑 (${gameState.discoveredSpecies.length} / ${FISH_SPECIES.length})`;
         bodyEl.innerHTML = `
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 ${FISH_SPECIES.map(sp => {
-                    const found = gameState.discovered.includes(sp.id);
-                    const shinyFound = gameState.shinyDiscovered.includes(sp.id);
-                    const rarity = RARITY_STYLES[sp.rarity];
+                    const unlocked = gameState.discoveredSpecies.includes(sp.id);
+                    const rMeta = RARITY_META[sp.rarity];
                     return `
-                        <div class="glass-light rounded-2xl p-3.5 flex items-start gap-3 ${found ? '' : 'opacity-50'}">
-                            <div class="w-12 h-12 rounded-2xl bg-slate-900/70 flex items-center justify-center text-2xl shrink-0 border border-white/10">
-                                ${found ? sp.icon : '❓'}
+                        <div class="glass-light rounded-2xl p-3.5 flex items-start gap-3 ${unlocked ? '' : 'opacity-55'}">
+                            <div class="w-11 h-11 rounded-2xl bg-slate-800/80 flex items-center justify-center text-2xl shrink-0 border border-white/10">
+                                ${unlocked ? sp.icon : '❓'}
                             </div>
                             <div class="flex-1 min-w-0">
-                                <div class="flex items-center gap-1.5 flex-wrap">
-                                    <span class="font-bold text-sm text-white">${found ? sp.name : '未知魚種'}</span>
-                                    <span class="text-[10px] px-1.5 py-0.5 rounded border ${rarity.bg} ${rarity.color}">${rarity.label}</span>
-                                    ${shinyFound ? '<span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-400/20 text-amber-300">✨ 已收集異色</span>' : ''}
+                                <div class="flex items-center gap-2">
+                                    <span class="font-bold text-sm text-white truncate">${unlocked ? sp.name : '未知魚種'}</span>
+                                    <span class="text-[10px] px-1.5 py-0.5 rounded border ${rMeta.bg} ${rMeta.color}">${rMeta.label}</span>
                                 </div>
-                                <p class="text-xs text-slate-300 mt-1 leading-relaxed">${found ? sp.desc : '購買魚苗包以解鎖此魚種資料。'}</p>
+                                <p class="text-xs text-slate-300 mt-1 line-clamp-2">${unlocked ? sp.desc : '購買對應魚苗包以解鎖此魚種圖鑑。'}</p>
+                                ${unlocked ? `<div class="text-[11px] text-amber-300/90 mt-1.5">成魚售價：🪙 ${sp.basePrice} • 收益：+${sp.passiveRate}/25s</div>` : ''}
                             </div>
                         </div>
                     `;
@@ -2117,224 +2225,344 @@ function renderModalContent() {
 function buySeedPack(packId) {
     const pack = SEED_PACKS.find(p => p.id === packId);
     if (!pack) return;
-    if (gameState.fishes.length >= getMaxCapacity()) {
-        showToast('魚缸已滿！請先出售成魚或升級魚缸容量');
+    const maxCap = getMaxCapacity(gameState.tankLevel);
+    if (gameState.fishes.length >= maxCap) {
+        showToast('魚缸已滿！請先出售成魚或至「設備升級」擴建魚缸。');
         return;
     }
     if (gameState.coins < pack.price) {
-        showToast('療癒金幣不足！點選畫面餵魚或等待成魚產出金幣');
+        showToast('療癒金幣不足！點選水面餵魚或等待成魚產出金幣吧。');
         return;
     }
 
     gameState.coins -= pack.price;
-
     const totalWeight = pack.pool.reduce((acc, item) => acc + item.weight, 0);
-    let r = Math.random() * totalWeight;
+    let rand = Math.random() * totalWeight;
     let chosenId = pack.pool[0].id;
     for (const item of pack.pool) {
-        if (r < item.weight) {
-            chosenId = item.id;
-            break;
-        }
-        r -= item.weight;
+        if (rand < item.weight) { chosenId = item.id; break; }
+        rand -= item.weight;
     }
 
-    const baseShiny = gameState.decorations.includes('crystal') ? 0.22 : 0.12;
-    const lightBonus = ((gameState.lightLevel || 1) - 1) * 0.03;
-    const shinyChance = baseShiny + lightBonus;
+    const shinyChance = 0.08 + (gameState.lampLevel - 1) * 0.04;
     const isShiny = Math.random() < shinyChance;
-
-    const newFish = addFishToTank(chosenId, isShiny);
+    const newFish = createFishInstance(chosenId, isShiny);
     const sp = FISH_SPECIES.find(s => s.id === chosenId);
 
-    sound.playCoinChime();
-    updateHUD();
+    playSound('hatch');
     saveGame();
+    updateHUD();
     closeModal();
-    showToast(isShiny ? `✨ 奇蹟誕生！獲得異色「${sp.name}」！` : `🌱 歡迎新成員「${sp.name}」加入水族箱！`);
-    openFishInspector(newFish.id);
+    showToast(isShiny ? `✨ 奇蹟孵化！「異色 ${sp.name}」加入魚缸！` : `🎉 孵化出可愛的「${sp.name}」魚苗！`);
 }
 
-function addFishToTank(speciesId, isShiny = false, customName = null) {
-    const sp = FISH_SPECIES.find(s => s.id === speciesId) || FISH_SPECIES[0];
-    const fishObj = {
-        id: 'fish_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
-        speciesId: sp.id,
-        name: customName || sp.name,
-        growth: 0,
-        hunger: 85,
-        isShiny: isShiny,
-        locked: false
-    };
-    gameState.fishes.push(fishObj);
-    if (!gameState.discovered.includes(sp.id)) gameState.discovered.push(sp.id);
-    if (isShiny && !gameState.shinyDiscovered.includes(sp.id)) gameState.shinyDiscovered.push(sp.id);
-    createFish3DMesh(fishObj);
-    return fishObj;
-}
-
-function upgradeTank() {
-    const cost = gameState.tankLevel * 180;
+function buyUpgrade(upgradeId) {
+    const upg = UPGRADES_DATA.find(u => u.id === upgradeId);
+    if (!upg) return;
+    const curLv = gameState[upgradeId] || 1;
+    if (curLv >= upg.maxLevel) return;
+    const cost = upg.costs[curLv];
     if (gameState.coins < cost) {
-        showToast('金幣不足，無法擴建水族箱');
+        showToast('金幣不足，無法進行設備升級！');
         return;
     }
     gameState.coins -= cost;
-    gameState.tankLevel++;
-    sound.playCoinChime();
+    gameState[upgradeId] = curLv + 1;
+    playSound('coin');
+    saveGame();
     updateHUD();
     renderModalContent();
-    saveGame();
-    showToast(`水族箱擴建至 Lv.${gameState.tankLevel}！`);
+    showToast(`⚙️ ${upg.name} 已升級至 Lv.${curLv + 1}！`);
 }
-function upgradeEquipment(key, maxLv, baseCost, label) {
-    const curLv = gameState[key] || 1;
-    if (curLv >= maxLv) return;
-    const cost = Math.round(baseCost * Math.pow(1.45, curLv - 1));
-    if (gameState.coins < cost) {
-        showToast(`金幣不足，無法升級${label}`);
+
+function buyDecor(decorId) {
+    const item = DECOR_ITEMS.find(d => d.id === decorId);
+    if (!item || gameState.unlockedDecors.includes(decorId)) return;
+    if (gameState.coins < item.price) {
+        showToast('金幣不足，無法購買此造景！');
         return;
     }
-    gameState.coins -= cost;
-    gameState[key] = curLv + 1;
-    sound.playCoinChime();
+    gameState.coins -= item.price;
+    gameState.unlockedDecors.push(decorId);
+    sync3DDecors();
+    playSound('coin');
+    saveGame();
     updateHUD();
     renderModalContent();
-    saveGame();
-    showToast(`「${label}」已升級至 Lv.${gameState[key]}！`);
+    showToast(`🪸 已將「${item.name}」擺入水族箱！`);
 }
 
-function buyDecoration(decorId) {
-    const dec = DECORATIONS.find(d => d.id === decorId);
-    if (!dec || gameState.decorations.includes(decorId)) return;
-    if (gameState.coins < dec.price) {
-        showToast('金幣不足，無法購買此造景');
-        return;
+// 12. 主動畫與生態模擬迴圈（支援時間流速倍率與 S 型擬真游動）
+let lastFrameTime = performance.now();
+let passiveCoinTimer = 0;
+let autoSaveTimer = 0;
+
+function animate(now) {
+    requestAnimationFrame(animate);
+    const rawDt = Math.min(0.05, (now - lastFrameTime) / 1000);
+    lastFrameTime = now;
+
+    const speedMult = gameState.timeScale ?? 1;
+    const simDt = rawDt * speedMult;
+    const elapsed = now * 0.001;
+
+    if (causticsMesh) {
+        causticsMesh.material.map.offset.x = Math.sin(elapsed * 0.25) * 0.18;
+        causticsMesh.material.map.offset.y = elapsed * 0.06;
     }
-    gameState.coins -= dec.price;
-    gameState.decorations.push(decorId);
-    rebuildDecorations3D();
-    sound.playCoinChime();
-    updateHUD();
-    renderModalContent();
-    saveGame();
-    showToast(`已擺設「${dec.name}」！`);
-}
+    godRays.forEach(gr => {
+        gr.mesh.material.opacity = 0.04 + Math.sin(elapsed * 0.9 + gr.phase) * 0.02;
+    });
 
-// 10. 本地存檔載入與離線生態模擬系統
-function formatOfflineDuration(seconds) {
-    if (seconds < 60) return `${Math.floor(seconds)} 秒`;
-    const mins = Math.floor(seconds / 60);
-    if (mins < 60) return `${mins} 分鐘`;
-    const hrs = Math.floor(mins / 60);
-    const remMins = mins % 60;
-    if (hrs < 24) return `${hrs} 小時 ${remMins} 分鐘`;
-    const days = Math.floor(hrs / 24);
-    const remHrs = hrs % 24;
-    return `${days} 天 ${remHrs} 小時`;
-}
-
-function simulateOfflineProgress(offlineSec) {
-    const effectiveSec = Math.min(offlineSec, 604800);
-    if (effectiveSec < 15 || gameState.fishes.length === 0) return;
-
-    const events = [];
-    const totalGrowthMult = getTotalGrowthMultiplier();
-    let totalOfflineCoins = 0;
-    const offlineGrowthMult = 0.45 * totalGrowthMult;
-
-    gameState.fishes.forEach(fish => {
-        const species = FISH_SPECIES.find(s => s.id === fish.speciesId) || FISH_SPECIES[0];
-        const beforeStage = getFishStageInfo(fish);
-        const wasAdult = beforeStage.isAdult;
-
-        fish.growth += effectiveSec * offlineGrowthMult;
-        fish.hunger = Math.max(25, fish.hunger - effectiveSec * 0.05);
-
-        const afterStage = getFishStageInfo(fish);
-
-        if (beforeStage.stage === 'fry' && afterStage.stage === 'juvenile') {
-            events.push(`🌱 「${fish.name}」(${species.name}) 茁壯成長為幼魚了！`);
-        } else if (!wasAdult && afterStage.isAdult) {
-            events.push(`🎉 「${fish.name}」(${species.name}) 已完全長成成魚，開始產出療癒金幣！`);
-        }
-
-        const cycles = Math.floor(effectiveSec / PASSIVE_INTERVAL);
-        if (cycles > 0) {
-            if (wasAdult) {
-                totalOfflineCoins += getFishPassiveIncome(fish) * cycles * 0.45;
-            } else if (afterStage.isAdult) {
-                totalOfflineCoins += getFishPassiveIncome(fish) * Math.floor(cycles * 0.4) * 0.45;
-            }
+    const isNightMode = gameState.lighting === 'night';
+    fishMeshes.forEach(mState => {
+        if (mState.glowColor && mState.bodyMat) {
+            const baseGlow = isNightMode ? 0.85 : (gameState.lighting === 'sunset' ? 0.35 : 0.08);
+            const pulse = isNightMode ? Math.sin(elapsed * 2.6 + mState.swimPhase * 0.25) * 0.22 : 0;
+            mState.bodyMat.emissiveIntensity = baseGlow + pulse;
+            if (mState.finMat) mState.finMat.emissiveIntensity = (baseGlow * 0.9) + pulse;
         }
     });
 
-    const earnedCoins = Math.floor(totalOfflineCoins);
-    if (earnedCoins > 0) {
-        gameState.coins += earnedCoins;
-        events.unshift(`🪙 魚群在您離開期間共為您累積了 ${earnedCoins} 金幣！`);
-    }
+    seaweeds.forEach(sw => {
+        sw.mesh.rotation.z = Math.sin(elapsed * 1.4 + sw.phase) * 0.12;
+        sw.mesh.rotation.x = Math.cos(elapsed * 1.1 + sw.phase) * 0.06;
+    });
 
-    if (events.length === 0) {
-        events.push(`💧 魚群在水族箱裡悠閒游動，一切安好，成長進度持續推進中。`);
-    }
-
-    const card = document.getElementById('offline-events-card');
-    const durBadge = document.getElementById('offline-duration-badge');
-    const listEl = document.getElementById('offline-events-list');
-    if (card && durBadge && listEl) {
-        durBadge.textContent = `離線經過：${formatOfflineDuration(effectiveSec)}`;
-        listEl.innerHTML = events.map(ev => `<li class="bg-black/25 px-2.5 py-2 rounded-xl border border-white/5 leading-relaxed">${ev}</li>`).join('');
-        card.classList.remove('hidden');
-    }
-}
-
-function saveGame() {
-    try {
-        gameState.lastSaveTime = Date.now();
-        localStorage.setItem('urban_chillquarium_3d_v1', JSON.stringify(gameState));
-    } catch (e) {}
-}
-
-function loadGame() {
-    let hasExistingSave = false;
-    try {
-        const raw = localStorage.getItem('urban_chillquarium_3d_v1');
-        if (raw) {
-            const parsed = JSON.parse(raw);
-            gameState = { ...DEFAULT_STATE, ...parsed };
-            gameState.fishes = (gameState.fishes || []).filter(f => FISH_SPECIES.some(s => s.id === f.speciesId));
-            hasExistingSave = gameState.fishes.length > 0;
+    bubbles.forEach(b => {
+        b.mesh.position.y += b.speed * rawDt * (0.7 + speedMult * 0.25);
+        b.mesh.position.x += Math.sin(elapsed * 3 + b.wobble) * 0.004;
+        if (b.mesh.position.y > TANK.waterTop - 0.05) {
+            b.mesh.position.y = TANK.sandTop + 0.1;
         }
-    } catch (e) {
-        gameState = JSON.parse(JSON.stringify(DEFAULT_STATE));
+    });
+
+    for (let i = foodPellets.length - 1; i >= 0; i--) {
+        const p = foodPellets[i];
+        p.age += simDt;
+        if (p.pos.y > TANK.sandTop + 0.08) {
+            p.pos.y -= 0.48 * simDt;
+            p.pos.x += Math.sin(elapsed * 4 + i) * 0.003;
+        }
+        if (p.age > 24) {
+            foodGroup.remove(p.mesh);
+            foodPellets.splice(i, 1);
+        }
     }
 
-    if (!hasExistingSave) {
-        addFishToTank('guppy', false, '小綠');
-        addFishToTank('neon_tetra', false, '霓虹');
-    } else {
-        const now = Date.now();
-        const offlineSec = Math.max(0, (now - (gameState.lastSaveTime || now)) / 1000);
-        simulateOfflineProgress(offlineSec);
-        gameState.fishes.forEach(f => createFish3DMesh(f));
+    const growthMultiplier = (1 + (gameState.heaterLevel - 1) * 0.18)
+        * (gameState.unlockedDecors.includes('driftwood') ? 1.10 : 1)
+        * (gameState.unlockedDecors.includes('volcano') ? 1.10 : 1);
+
+    gameState.fishes.forEach(fish => {
+        const sp = FISH_SPECIES.find(s => s.id === fish.speciesId);
+        const mState = fishMeshes.get(fish.uid);
+        if (!sp || !mState) return;
+
+        fish.hunger = Math.max(0, fish.hunger - 0.55 * simDt);
+
+        if (fish.growthProgress < 100) {
+            const hungerFactor = fish.hunger > 20 ? 1.0 : 0.35;
+            const naturalRate = (100 / sp.growthTime) * hungerFactor * growthMultiplier;
+            fish.growthProgress = Math.min(100, fish.growthProgress + naturalRate * simDt);
+            const stageScale = 0.42 + (fish.growthProgress / 100) * 0.68;
+            mState.root.scale.setScalar(stageScale);
+        }
+
+        let nearestFood = null;
+        let minFoodDist = 4.5;
+        if (fish.hunger < 92 && foodPellets.length > 0) {
+            for (const p of foodPellets) {
+                const d = mState.pos.distanceTo(p.pos);
+                if (d < minFoodDist) {
+                    minFoodDist = d;
+                    nearestFood = p;
+                }
+            }
+        }
+
+        if (nearestFood) {
+            mState.target.copy(nearestFood.pos);
+            if (minFoodDist < 0.34) {
+                const idx = foodPellets.indexOf(nearestFood);
+                if (idx !== -1) {
+                    foodGroup.remove(nearestFood.mesh);
+                    foodPellets.splice(idx, 1);
+                }
+                fish.hunger = Math.min(100, fish.hunger + 28);
+                if (fish.growthProgress < 100) {
+                    const foodBonus = (14 + (gameState.foodLevel - 1) * 5) * (60 / sp.growthTime);
+                    fish.growthProgress = Math.min(100, fish.growthProgress + foodBonus);
+                }
+                playSound('eat');
+            }
+        } else {
+            mState.decisionTimer -= simDt;
+            if (mState.decisionTimer <= 0 || mState.pos.distanceTo(mState.target) < 0.5) {
+                mState.decisionTimer = 2.0 + Math.random() * 3.2;
+                mState.target.set(
+                    (Math.random() - 0.5) * (TANK.w - 1.6),
+                    TANK.sandTop + 0.55 + Math.random() * (TANK.waterTop - TANK.sandTop - 1.1),
+                    (Math.random() - 0.5) * (TANK.d - 1.4)
+                );
+            }
+        }
+
+        const desiredDir = new THREE.Vector3().subVectors(mState.target, mState.pos);
+        const distToTarget = desiredDir.length();
+        if (distToTarget > 0.001) desiredDir.normalize();
+
+        const maxSpeed = (nearestFood ? 1.85 : 0.92) * (sp.bodyType === 'mola' ? 0.65 : 1.0);
+        const desiredVel = desiredDir.multiplyScalar(maxSpeed);
+        mState.vel.lerp(desiredVel, Math.min(1, 2.4 * simDt));
+
+        mState.pos.addScaledVector(mState.vel, simDt);
+
+        const halfW = TANK.w / 2 - 0.55;
+        const halfD = TANK.d / 2 - 0.55;
+        mState.pos.x = Math.max(-halfW, Math.min(halfW, mState.pos.x));
+        mState.pos.z = Math.max(-halfD, Math.min(halfD, mState.pos.z));
+        mState.pos.y = Math.max(TANK.sandTop + 0.4, Math.min(TANK.waterTop - 0.35, mState.pos.y));
+        mState.root.position.copy(mState.pos);
+
+        const speed = mState.vel.length();
+        if (speed > 0.04) {
+            const lookTarget = mState.pos.clone().add(mState.vel);
+            const dummy = new THREE.Object3D();
+            dummy.position.copy(mState.pos);
+            dummy.lookAt(lookTarget);
+            mState.root.quaternion.slerp(dummy.quaternion, Math.min(1, 5.2 * simDt));
+        }
+
+        const freq = (nearestFood ? 13 : 6.2) * (sp.bodyType === 'mola' ? 0.55 : 1.0);
+        mState.swimPhase += simDt * freq;
+
+        const posAttr = mState.bodyGeo.attributes.position;
+        const basePos = mState.basePositions;
+        const halfLen = mState.bodyLen * 0.5;
+        const amp = sp.bodyType === 'arowana' ? 0.085 : (sp.bodyType === 'mola' ? 0.02 : 0.055);
+
+        for (let i = 0; i < posAttr.count; i++) {
+            const bx = basePos[i * 3];
+            const bz = basePos[i * 3 + 2];
+            const normTail = Math.max(0, (halfLen - bz) / mState.bodyLen);
+            const wave = Math.sin(mState.swimPhase - normTail * 3.6) * amp * Math.pow(normTail, 1.45);
+            posAttr.setX(i, bx + wave);
+        }
+        posAttr.needsUpdate = true;
+
+        if (sp.bodyType === 'mola') {
+            mState.tailPivot.rotation.y = Math.sin(mState.swimPhase) * 0.14;
+            mState.dorsalMesh.rotation.z = Math.sin(mState.swimPhase) * 0.28;
+        } else {
+            const tailSwing = sp.bodyType === 'guppy' ? 0.34 : 0.42;
+            mState.tailPivot.rotation.y = Math.sin(mState.swimPhase - 2.4) * tailSwing;
+            if (sp.bodyType === 'guppy') {
+                mState.tailPivot.rotation.z = Math.cos(mState.swimPhase * 0.7) * 0.08;
+            }
+        }
+
+        const pecSwing = Math.sin(mState.swimPhase * 0.85) * 0.38;
+        mState.pecPivotL.rotation.y = 0.25 + pecSwing;
+        mState.pecPivotR.rotation.y = -0.25 - pecSwing;
+
+        const gillFlare = 0.06 + Math.sin(elapsed * 4.5 + mState.swimPhase * 0.1) * 0.05;
+        mState.gillL.position.z = mState.bodyLen * 0.22 - gillFlare * 0.12;
+        mState.gillR.position.z = mState.bodyLen * 0.22 - gillFlare * 0.12;
+    });
+
+    passiveCoinTimer += simDt;
+    if (passiveCoinTimer >= 25.0) {
+        passiveCoinTimer = 0;
+        let gainedTotal = 0;
+        gameState.fishes.forEach(fish => {
+            const inc = getFishPassiveIncome(fish);
+            if (inc > 0) {
+                gainedTotal += inc;
+                const mState = fishMeshes.get(fish.uid);
+                if (mState) spawnFloatingCoinText(mState.pos, `+${inc} 🪙`);
+            }
+        });
+        if (gainedTotal > 0) {
+            gameState.coins += gainedTotal;
+            updateHUD();
+        }
     }
 
-    rebuildDecorations3D();
-    setLighting(gameState.lighting || 'day');
-    document.getElementById('mute-btn').textContent = gameState.muted ? '🔇' : '🔊';
+    autoSaveTimer += rawDt;
+    if (autoSaveTimer >= 15.0) {
+        autoSaveTimer = 0;
+        saveGame();
+    }
+
     updateHUD();
-    saveGame();
+    renderer.render(scene, camera);
 }
 
-window.addEventListener('beforeunload', () => {
-    saveGame();
-});
+function onWindowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+}
 
+// 13. 顏色輔助工具函式
+function hexToRgb(hex) {
+    const clean = hex.replace('#', '');
+    const num = parseInt(clean, 16);
+    return { r: (num >> 16) & 255, g: (num >> 8) & 255, b: num & 255 };
+}
+function rgbToHex(r, g, b) {
+    return '#' + [r, g, b].map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('');
+}
+function darkenHex(hex, amount) {
+    const { r, g, b } = hexToRgb(hex);
+    return rgbToHex(r * (1 - amount), g * (1 - amount), b * (1 - amount));
+}
+function lightenHex(hex, amount) {
+    const { r, g, b } = hexToRgb(hex);
+    return rgbToHex(r + (255 - r) * amount, g + (255 - g) * amount, b + (255 - b) * amount);
+}
+function shiftHueHex(hex, shift) {
+    let { r, g, b } = hexToRgb(hex);
+    r /= 255; g /= 255; b /= 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    let h, s, l = (max + min) / 2;
+    if (max === min) { h = s = 0; }
+    else {
+        const d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        switch (max) {
+            case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+            case g: h = (b - r) / d + 2; break;
+            case b: h = (r - g) / d + 4; break;
+        }
+        h /= 6;
+    }
+    h = (h + shift) % 1;
+    function hue2rgb(p, q, t) {
+        if (t < 0) t += 1;
+        if (t > 1) t -= 1;
+        if (t < 1 / 6) return p + (q - p) * 6 * t;
+        if (t < 1 / 2) return q;
+        if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+        return p;
+    }
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    const p = 2 * l - q;
+    return rgbToHex(hue2rgb(p, q, h + 1 / 3) * 255, hue2rgb(p, q, h) * 255, hue2rgb(p, q, h - 1 / 3) * 255);
+}
+
+// 14. 啟動遊戲
 window.onload = function () {
-    initThreeJS();
+    initThree();
     loadGame();
-    animate();
+    sync3DFishes();
+    sync3DDecors();
+    setLighting(gameState.lighting || 'day');
+    setTimeScale(gameState.timeScale || 1);
+    updateHUD();
+    renderOfflineReport();
+    requestAnimationFrame(animate);
 };
 </script>
 </body>
