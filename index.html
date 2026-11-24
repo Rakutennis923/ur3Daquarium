@@ -34,6 +34,7 @@
             width: 100%;
             height: 100%;
             outline: none;
+            touch-action: none;
         }
         .glass {
             background: rgba(12, 27, 44, 0.72);
@@ -133,18 +134,18 @@
     </header>
 
     <!-- 右側常駐控制欄：時間流速拉桿 + 離線生態事件日誌 -->
-    <aside id="right-dock" class="ui-transition fixed right-3 sm:right-4 top-20 sm:top-24 z-30 flex flex-col items-end gap-2.5 pointer-events-none">
-        <div class="glass px-3.5 py-2.5 rounded-2xl w-48 sm:w-52 pointer-events-auto">
-            <div class="flex items-center justify-between text-xs mb-1.5">
-                <span class="text-slate-300 flex items-center gap-1"><span>⏱️</span> 時間流速</span>
-                <span id="speed-display" class="font-bold text-cyan-300 bg-cyan-500/20 px-2 py-0.5 rounded-lg">1.0x</span>
+    <aside id="right-dock" class="ui-transition fixed right-2.5 sm:right-4 top-16 sm:top-20 z-30 flex flex-col items-end gap-2 pointer-events-none">
+        <div class="glass px-2.5 py-1.5 rounded-xl w-36 sm:w-40 pointer-events-auto">
+            <div class="flex items-center justify-between text-[10px] mb-1">
+                <span class="text-slate-300 flex items-center gap-0.5"><span>⏱️</span> 流速</span>
+                <span id="speed-display" class="font-bold text-cyan-300 bg-cyan-500/20 px-1.5 py-0.2 rounded">1X</span>
             </div>
-            <input id="time-speed-slider" type="range" min="0" max="10" step="0.5" value="1" oninput="setTimeScale(this.value)" class="w-full accent-cyan-400 cursor-pointer h-1.5 bg-slate-700 rounded-lg">
-            <div class="flex justify-between text-[10px] text-slate-400 mt-1">
-                <span class="cursor-pointer hover:text-white" onclick="setTimeScale(0)">暫停</span>
-                <span class="cursor-pointer hover:text-white" onclick="setTimeScale(1)">1x</span>
-                <span class="cursor-pointer hover:text-white" onclick="setTimeScale(5)">5x</span>
-                <span class="cursor-pointer hover:text-white" onclick="setTimeScale(10)">10x</span>
+            <input id="time-speed-slider" type="range" min="0" max="3" step="1" value="1" oninput="setTimeScaleByIndex(this.value)" class="w-full accent-cyan-400 cursor-pointer h-1 bg-slate-700 rounded-lg">
+            <div class="flex justify-between text-[9px] text-slate-400 mt-0.5 font-medium">
+                <span class="cursor-pointer hover:text-white px-0.5" onclick="setTimeScale(0.5)">0.5X</span>
+                <span class="cursor-pointer hover:text-white px-0.5" onclick="setTimeScale(1)">1X</span>
+                <span class="cursor-pointer hover:text-white px-0.5" onclick="setTimeScale(3)">3X</span>
+                <span class="cursor-pointer hover:text-white px-0.5" onclick="setTimeScale(6)">6X</span>
             </div>
         </div>
 
@@ -229,23 +230,23 @@
     </div>
 
     <!-- 底部導覽列 -->
-    <nav id="bottom-nav" class="ui-transition fixed bottom-3 left-1/2 -translate-x-1/2 z-30 w-[94%] max-w-lg">
-        <div class="glass p-2 rounded-3xl grid grid-cols-4 gap-1.5 sm:gap-2">
-            <button onclick="openModal('shop')" class="py-2.5 px-2 rounded-2xl hover:bg-white/10 active:scale-95 transition flex flex-col items-center justify-center gap-1">
-                <span class="text-lg sm:text-xl">🛍️</span>
-                <span class="text-[11px] sm:text-xs font-medium text-cyan-100">魚苗商店</span>
+    <nav id="bottom-nav" class="ui-transition fixed bottom-2.5 left-1/2 -translate-x-1/2 z-30 w-[90%] max-w-md">
+        <div class="glass px-1.5 py-1 rounded-2xl grid grid-cols-4 gap-1">
+            <button onclick="openModal('shop')" class="py-1.5 px-1 rounded-xl hover:bg-white/10 active:scale-95 transition flex flex-col items-center justify-center gap-0.5">
+                <span class="text-sm sm:text-base leading-none">🛍️</span>
+                <span class="text-[9px] sm:text-[10px] font-medium text-cyan-100 leading-tight">魚苗商店</span>
             </button>
-            <button onclick="openModal('upgrades')" class="py-2.5 px-2 rounded-2xl hover:bg-white/10 active:scale-95 transition flex flex-col items-center justify-center gap-1">
-                <span class="text-lg sm:text-xl">⚙️</span>
-                <span class="text-[11px] sm:text-xs font-medium text-cyan-100">設備升級</span>
+            <button onclick="openModal('upgrades')" class="py-1.5 px-1 rounded-xl hover:bg-white/10 active:scale-95 transition flex flex-col items-center justify-center gap-0.5">
+                <span class="text-sm sm:text-base leading-none">⚙️</span>
+                <span class="text-[9px] sm:text-[10px] font-medium text-cyan-100 leading-tight">設備升級</span>
             </button>
-            <button onclick="openModal('decor')" class="py-2.5 px-2 rounded-2xl hover:bg-white/10 active:scale-95 transition flex flex-col items-center justify-center gap-1">
-                <span class="text-lg sm:text-xl">🪸</span>
-                <span class="text-[11px] sm:text-xs font-medium text-cyan-100">水族造景</span>
+            <button onclick="openModal('decor')" class="py-1.5 px-1 rounded-xl hover:bg-white/10 active:scale-95 transition flex flex-col items-center justify-center gap-0.5">
+                <span class="text-sm sm:text-base leading-none">🪸</span>
+                <span class="text-[9px] sm:text-[10px] font-medium text-cyan-100 leading-tight">水族造景</span>
             </button>
-            <button onclick="openModal('dex')" class="py-2.5 px-2 rounded-2xl hover:bg-white/10 active:scale-95 transition flex flex-col items-center justify-center gap-1">
-                <span class="text-lg sm:text-xl">📖</span>
-                <span class="text-[11px] sm:text-xs font-medium text-cyan-100">魚類圖鑑</span>
+            <button onclick="openModal('dex')" class="py-1.5 px-1 rounded-xl hover:bg-white/10 active:scale-95 transition flex flex-col items-center justify-center gap-0.5">
+                <span class="text-sm sm:text-base leading-none">📖</span>
+                <span class="text-[9px] sm:text-[10px] font-medium text-cyan-100 leading-tight">魚類圖鑑</span>
             </button>
         </div>
     </nav>
@@ -1436,70 +1437,121 @@ function animate() {
             dummy.position.copy(entry.root.position);
             dummy.lookAt(lookTarget);
             dummy.rotateZ(entry.currentRoll);
-            entry.root.quaternion.slerp(dummy.quaternion, 0.075);
+            entry.root.quaternion.slerp(dummy.quaternion, 0.08);
         }
 
-        const visualSpeedFactor = timeScale === 0 ? 0.2 : Math.min(2.5, Math.sqrt(timeScale));
-        const swimFreq = (nearestFood ? 14.5 : (5.5 + currentSpeed * 3.2)) * visualSpeedFactor;
-        const phase = elapsed * swimFreq + entry.swimPhase;
-        const waveAmp = (entry.species.bodyType === 'mola' ? 0.025 : 0.055) * (0.6 + currentSpeed * 0.45);
-
+        // S 型魚身脊椎擺動與魚鰭律動
+        const speedFactor = Math.max(0.45, currentSpeed);
+        entry.swimPhase += dt * (4.2 + speedFactor * 4.5);
         const posAttr = entry.bodyGeo.attributes.position;
         const { baseX, baseZ, halfLen } = entry.bodyGeo.userData;
         for (let i = 0; i < posAttr.count; i++) {
-            const z = baseZ[i];
-            const normPos = THREE.MathUtils.clamp((halfLen - z) / (halfLen * 2), 0, 1);
-            const bend = Math.sin(phase - normPos * 3.2) * Math.pow(normPos, 1.65) * waveAmp;
-            posAttr.setX(i, baseX[i] + bend);
+            const zNorm = (halfLen - baseZ[i]) / (halfLen * 2);
+            const amp = Math.pow(Math.max(0, zNorm), 1.75) * 0.085;
+            const wave = Math.sin(entry.swimPhase - zNorm * 3.4);
+            posAttr.setX(i, baseX[i] + wave * amp);
         }
         posAttr.needsUpdate = true;
 
-        const tailAngle = Math.sin(phase - 3.6) * (nearestFood ? 0.55 : 0.36);
-        entry.tailPivot.rotation.y = tailAngle;
-        entry.tailPivot.position.x = Math.sin(phase - 3.2) * waveAmp;
-
-        const pecFreq = (nearestFood ? 12.0 : 4.8) * visualSpeedFactor;
-        const pecSwing = Math.sin(elapsed * pecFreq + entry.swimPhase) * 0.38;
-        entry.pecLeft.rotation.y = 0.25 + pecSwing;
-        entry.pecRight.rotation.y = -0.25 - pecSwing;
-
-        const gillBreath = (Math.sin(elapsed * 3.6 * visualSpeedFactor + entry.swimPhase) + 1) * 0.045;
+        entry.tailPivot.rotation.y = Math.sin(entry.swimPhase - 2.4) * 0.45;
+        entry.pecLeft.rotation.y = 0.35 + Math.sin(entry.swimPhase * 0.7) * 0.25;
+        entry.pecRight.rotation.y = -0.35 - Math.sin(entry.swimPhase * 0.7) * 0.25;
+        const gillBreath = 0.06 + Math.sin(elapsed * 3.5 + entry.swimPhase * 0.2) * 0.04;
         entry.gillLeft.rotation.y = gillBreath;
         entry.gillRight.rotation.y = -gillBreath;
+
+        // 限制魚兒活動範圍不穿出玻璃缸
+        const boundX = TANK_W / 2 - 0.85;
+        const boundY = TANK_H / 2 - 0.85;
+        const boundZ = TANK_D / 2 - 0.75;
+        entry.root.position.x = THREE.MathUtils.clamp(entry.root.position.x, -boundX, boundX);
+        entry.root.position.y = THREE.MathUtils.clamp(entry.root.position.y, -boundY, boundY);
+        entry.root.position.z = THREE.MathUtils.clamp(entry.root.position.z, -boundZ, boundZ);
     });
 
     passiveIncomeTimer += dt;
     if (passiveIncomeTimer >= 10) {
-        const cycles = Math.floor(passiveIncomeTimer / 10);
-        passiveIncomeTimer %= 10;
-        for (let c = 0; c < cycles; c++) {
-            grantPassiveIncome();
-        }
+        passiveIncomeTimer = 0;
+        grantPassiveIncome();
+    }
+
+    autoSaveTimer += rawDt;
+    if (autoSaveTimer >= 15) {
+        autoSaveTimer = 0;
+        saveGame();
     }
 
     if (selectedFishId) {
         updateInspectorLive();
     }
 
-    autoSaveTimer += rawDt;
-    if (autoSaveTimer >= 10) {
-        autoSaveTimer = 0;
-        saveGame();
-    }
-
     renderer.render(scene, camera);
 }
 
-// 7. 攝影機控制與畫布點擊互動
+// 7. 攝影機控制與畫布點擊互動（支援手機單指順暢旋轉與雙指縮放）
 function setupControls(domElement) {
-    domElement.addEventListener('pointerdown', (e) => {
+    let pinchStartDist = 0;
+    let pinchStartRadius = camRadius;
+    let isTouchActive = false;
+
+    // 手機與平板專屬觸控支援（避免瀏覽器預設滑動干擾）
+    domElement.addEventListener('touchstart', (e) => {
+        isTouchActive = true;
+        if (e.touches.length === 1) {
+            isDragging = true;
+            dragMoved = false;
+            prevPointer = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        } else if (e.touches.length === 2) {
+            isDragging = false;
+            dragMoved = true;
+            const dx = e.touches[0].clientX - e.touches[1].clientX;
+            const dy = e.touches[0].clientY - e.touches[1].clientY;
+            pinchStartDist = Math.hypot(dx, dy);
+            pinchStartRadius = camRadius;
+        }
+    }, { passive: false });
+
+    domElement.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        if (e.touches.length === 1 && isDragging) {
+            const dx = e.touches[0].clientX - prevPointer.x;
+            const dy = e.touches[0].clientY - prevPointer.y;
+            if (Math.abs(dx) > 5 || Math.abs(dy) > 5) dragMoved = true;
+            camTheta -= dx * 0.0095;
+            camPhi = Math.max(0.45, Math.min(Math.PI * 0.58, camPhi - dy * 0.0095));
+            updateCameraPosition();
+            prevPointer = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        } else if (e.touches.length === 2 && pinchStartDist > 0) {
+            const dx = e.touches[0].clientX - e.touches[1].clientX;
+            const dy = e.touches[0].clientY - e.touches[1].clientY;
+            const dist = Math.hypot(dx, dy);
+            const scale = pinchStartDist / Math.max(10, dist);
+            camRadius = Math.max(8.5, Math.min(23, pinchStartRadius * scale));
+            updateCameraPosition();
+        }
+    }, { passive: false });
+
+    domElement.addEventListener('touchend', (e) => {
+        if (e.touches.length === 0) {
+            if (isDragging && !dragMoved && e.changedTouches.length > 0) {
+                handleCanvasTap(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+            }
+            isDragging = false;
+            pinchStartDist = 0;
+            setTimeout(() => { isTouchActive = false; }, 100);
+        }
+    });
+
+    // 電腦滑鼠支援
+    domElement.addEventListener('mousedown', (e) => {
+        if (isTouchActive) return;
         isDragging = true;
         dragMoved = false;
         prevPointer = { x: e.clientX, y: e.clientY };
     });
 
-    window.addEventListener('pointermove', (e) => {
-        if (!isDragging) return;
+    window.addEventListener('mousemove', (e) => {
+        if (isTouchActive || !isDragging) return;
         const dx = e.clientX - prevPointer.x;
         const dy = e.clientY - prevPointer.y;
         if (Math.abs(dx) > 4 || Math.abs(dy) > 4) dragMoved = true;
@@ -1509,7 +1561,8 @@ function setupControls(domElement) {
         prevPointer = { x: e.clientX, y: e.clientY };
     });
 
-    window.addEventListener('pointerup', (e) => {
+    window.addEventListener('mouseup', (e) => {
+        if (isTouchActive) return;
         if (isDragging && !dragMoved && e.target === domElement) {
             handleCanvasTap(e.clientX, e.clientY);
         }
@@ -1686,21 +1739,31 @@ function toggleZenMode() {
     const ids = ['top-hud', 'bottom-nav', 'hint-pill', 'right-dock'];
     ids.forEach(id => {
         const el = document.getElementById(id);
-        if (!el) return;
-        if (isZenMode) el.classList.add('ui-hidden');
-        else el.classList.remove('ui-hidden');
+        if (el) el.classList.toggle('ui-hidden', isZenMode);
     });
-    if (isZenMode) closeInspector();
-    document.getElementById('restore-ui-btn').classList.toggle('hidden', !isZenMode);
+    const restoreBtn = document.getElementById('restore-ui-btn');
+    if (restoreBtn) restoreBtn.classList.toggle('hidden', !isZenMode);
+    if (isZenMode) {
+        closeInspector();
+        closeModal();
+    }
+}
+
+const SPEED_OPTIONS = [0.5, 1, 3, 6];
+
+function setTimeScaleByIndex(idx) {
+    const val = SPEED_OPTIONS[parseInt(idx, 10)] ?? 1;
+    setTimeScale(val);
 }
 
 function setTimeScale(val) {
     timeScale = parseFloat(val);
     const slider = document.getElementById('time-speed-slider');
     const display = document.getElementById('speed-display');
-    if (slider) slider.value = timeScale;
+    const foundIdx = SPEED_OPTIONS.indexOf(timeScale);
+    if (slider && foundIdx !== -1) slider.value = foundIdx;
     if (display) {
-        display.textContent = timeScale === 0 ? '⏸ 暫停' : `${timeScale.toFixed(1)}x`;
+        display.textContent = `${timeScale}X`;
     }
 }
 
