@@ -114,7 +114,7 @@
                 <span class="text-lg">✨</span>
                 <div>
                     <div class="text-[10px] text-cyan-200/70 leading-none">被動收益</div>
-                    <div id="hud-income" class="text-sm font-semibold text-emerald-300">+0 / 25秒</div>
+                    <div id="hud-income" class="text-sm font-semibold text-emerald-300">+0 / 分鐘</div>
                 </div>
             </div>
         </div>
@@ -173,60 +173,86 @@
     </button>
 
     <!-- 操作提示膠囊 -->
-    <div id="hint-pill" class="ui-transition fixed top-28 sm:top-20 left-2.5 sm:left-1/2 sm:-translate-x-1/2 z-20 pointer-events-none max-w-[54vw] sm:max-w-none">
+    <div id="hint-pill" class="ui-transition fixed top-32 sm:top-20 left-2.5 sm:left-1/2 sm:-translate-x-1/2 z-20 pointer-events-none max-w-[54vw] sm:max-w-none">
         <div class="glass-light px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-xl sm:rounded-full text-[10px] sm:text-xs text-cyan-100/90 leading-snug sm:whitespace-nowrap shadow">
             💧 點水餵食 • 拖曳旋轉 • 點魚看詳情
         </div>
     </div>
 
-    <!-- 單隻魚詳情卡片 -->
-    <div id="fish-inspector" class="hidden fixed inset-x-0 bottom-16 sm:bottom-20 z-30 flex justify-center px-4 pointer-events-none">
-        <div class="w-full max-w-[248px] sm:max-w-[272px] glass rounded-2xl p-2.5 sm:p-3 animate-pop pointer-events-auto">
-            <div class="flex items-start justify-between mb-1.5">
-                <div class="flex items-center gap-1.5 min-w-0">
-                    <div id="insp-icon" class="w-8 h-8 rounded-xl bg-cyan-500/20 flex items-center justify-center text-lg border border-cyan-400/30 shrink-0">🐠</div>
+    <!-- 魚隻資訊檢查卡（自動置中不遮擋） -->
+    <div id="fish-inspector" class="hidden fixed inset-x-0 bottom-16 sm:bottom-20 z-30 flex justify-center px-3 pointer-events-none">
+        <div class="w-full max-w-[260px] sm:max-w-xs glass rounded-2xl p-3 animate-pop pointer-events-auto">
+            <div class="flex items-center justify-between gap-2 mb-2">
+                <div class="flex items-center gap-2 min-w-0">
+                    <span id="insp-icon" class="text-2xl shrink-0">🐟</span>
                     <div class="min-w-0">
                         <div class="flex items-center gap-1">
-                            <input id="insp-name-input" type="text" maxlength="12" onchange="renameSelectedFish(this.value)" class="bg-transparent border-b border-dashed border-cyan-400/50 text-xs font-bold text-white w-20 sm:w-24 focus:outline-none focus:border-cyan-300" title="點擊修改名字">
-                            <span id="insp-shiny-badge" class="hidden text-[9px] px-1 py-0.5 rounded bg-amber-400/20 text-amber-300 border border-amber-400/40 font-semibold shrink-0">✨ 異色</span>
+                            <input id="insp-name-input" type="text" maxlength="10" onchange="renameSelectedFish(this.value)" class="bg-white/10 text-white font-bold text-xs px-1.5 py-0.5 rounded w-24 outline-none focus:ring-1 focus:ring-cyan-400">
+                            <span id="insp-shiny-badge" class="hidden text-[10px] px-1.5 py-0.5 rounded bg-amber-400/20 text-amber-300 font-bold shrink-0">✨異色</span>
                         </div>
-                        <div id="insp-species" class="text-[10px] text-cyan-200/75 mt-0.5 truncate">孔雀魚 • 普通</div>
+                        <div id="insp-species" class="text-[10px] text-cyan-200/80 truncate mt-0.5">孔雀魚 • 普通</div>
                     </div>
                 </div>
-                <button onclick="closeInspector()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-white/10 transition text-xs shrink-0">✕</button>
+                <button onclick="closeInspector()" class="w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-xs text-slate-300 shrink-0">✕</button>
             </div>
-
-            <div class="space-y-1.5 my-1.5 text-[10px] sm:text-[11px]">
+            <div class="space-y-1.5 text-[11px] mb-2.5">
                 <div>
                     <div class="flex justify-between text-slate-300 mb-0.5">
-                        <span>成長階段：<strong id="insp-stage" class="text-cyan-300">魚苗</strong></span>
-                        <span id="insp-growth-pct">0%</span>
+                        <span>成長階段：<strong id="insp-stage" class="text-cyan-300">幼魚</strong></span>
+                        <span id="insp-growth-pct">50%</span>
                     </div>
-                    <div class="w-full h-1.5 bg-slate-800/80 rounded-full overflow-hidden">
-                        <div id="insp-growth-bar" class="h-full bg-gradient-to-r from-cyan-400 to-emerald-400 transition-all duration-300" style="width: 0%"></div>
+                    <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                        <div id="insp-growth-bar" class="h-full bg-emerald-400 rounded-full transition-all" style="width: 50%"></div>
                     </div>
                 </div>
                 <div>
                     <div class="flex justify-between text-slate-300 mb-0.5">
                         <span>飽食程度</span>
-                        <span id="insp-hunger-pct">100%</span>
+                        <span id="insp-hunger-pct">80%</span>
                     </div>
-                    <div class="w-full h-1.5 bg-slate-800/80 rounded-full overflow-hidden">
-                        <div id="insp-hunger-bar" class="h-full bg-gradient-to-r from-amber-400 to-orange-400 transition-all duration-300" style="width: 100%"></div>
+                    <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                        <div id="insp-hunger-bar" class="h-full bg-amber-400 rounded-full transition-all" style="width: 80%"></div>
                     </div>
                 </div>
-                <div class="flex justify-between items-center pt-1 text-slate-300 border-t border-white/10">
-                    <span>成魚被動收益：<strong id="insp-passive" class="text-emerald-300">+1 🪙/25s</strong></span>
+                <div class="flex justify-between text-slate-300 pt-0.5">
+                    <span>成魚被動收益</span>
+                    <span id="insp-passive" class="text-emerald-300 font-semibold">+1 🪙/分</span>
                 </div>
             </div>
-
-            <div class="flex items-center gap-1.5 mt-2">
-                <button id="insp-lock-btn" onclick="toggleLockSelectedFish()" class="flex-1 py-1.5 px-1.5 rounded-xl glass-light hover:bg-white/15 text-[10px] sm:text-[11px] font-medium flex items-center justify-center gap-1 transition">
+            <div class="flex items-center gap-1.5">
+                <button id="insp-lock-btn" onclick="toggleLockSelectedFish()" class="flex-1 py-1.5 rounded-xl glass-light hover:bg-white/15 text-[11px] font-medium flex items-center justify-center gap-1 transition">
                     <span>🔓</span> <span>未上鎖</span>
                 </button>
-                <button id="insp-sell-btn" onclick="sellSelectedFish()" class="flex-1 py-1.5 px-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-bold text-[10px] sm:text-[11px] flex items-center justify-center gap-1 shadow-lg transition">
-                    <span>🪙</span> <span id="insp-sell-price">出售 30</span>
+                <button id="insp-sell-btn" onclick="sellSelectedFish()" class="flex-1 py-1.5 rounded-xl bg-amber-500/25 hover:bg-amber-500/40 text-amber-200 text-[11px] font-bold flex items-center justify-center gap-1 transition">
+                    <span>🪙</span> <span id="insp-sell-price">出售 28</span>
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 造景自由擺設控制面板 -->
+    <div id="decor-edit-bar" class="hidden fixed inset-x-0 bottom-5 sm:bottom-10 z-30 flex justify-center px-3 pointer-events-none">
+        <div class="w-full max-w-[300px] sm:max-w-sm glass rounded-2xl p-2.5 sm:p-3 animate-pop pointer-events-auto">
+            <div class="flex items-center justify-between gap-2 mb-1.5">
+                <div class="flex items-center gap-1 text-[11px] sm:text-xs font-bold text-cyan-200 min-w-0">
+                    <span class="shrink-0">🎨</span>
+                    <span id="decor-edit-title" class="truncate">造景自由擺設模式</span>
+                </div>
+                <button onclick="exitDecorEditMode()" class="px-2.5 py-1 rounded-lg bg-emerald-500/25 hover:bg-emerald-500/40 text-emerald-200 text-[11px] font-semibold shrink-0 transition">
+                    完成 ✓
+                </button>
+            </div>
+            <p class="text-[10px] sm:text-[11px] text-slate-300 mb-2 leading-snug">直接在底沙上<strong>拖曳</strong>，或使用方向鍵微調<strong>前後左右</strong>位置：</p>
+            <div class="grid grid-cols-4 gap-1 mb-1.5">
+                <button onclick="nudgeSelectedDecor(0, -0.35)" class="py-1.5 rounded-xl glass-light hover:bg-white/15 text-[11px] font-medium transition">⬆️ 往後</button>
+                <button onclick="nudgeSelectedDecor(0, 0.35)" class="py-1.5 rounded-xl glass-light hover:bg-white/15 text-[11px] font-medium transition">⬇️ 往前</button>
+                <button onclick="nudgeSelectedDecor(-0.35, 0)" class="py-1.5 rounded-xl glass-light hover:bg-white/15 text-[11px] font-medium transition">⬅️ 往左</button>
+                <button onclick="nudgeSelectedDecor(0.35, 0)" class="py-1.5 rounded-xl glass-light hover:bg-white/15 text-[11px] font-medium transition">➡️ 往右</button>
+            </div>
+            <div class="flex items-center gap-1.5">
+                <button onclick="rotateSelectedDecor(-Math.PI / 6)" class="flex-1 py-1.5 rounded-xl glass-light hover:bg-white/15 text-[11px] font-medium transition">↺ 左轉</button>
+                <button onclick="rotateSelectedDecor(Math.PI / 6)" class="flex-1 py-1.5 rounded-xl glass-light hover:bg-white/15 text-[11px] font-medium transition">↻ 右轉</button>
+                <button onclick="storeSelectedDecor()" class="py-1.5 px-2.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/35 text-rose-200 text-[11px] font-medium transition">收起</button>
             </div>
         </div>
     </div>
@@ -278,106 +304,106 @@ const FISH_SPECIES = [
     {
         id: 'guppy', name: '孔雀魚', rarity: 'Common', icon: '🐟',
         bodyType: 'guppy', baseColor: '#f97316', secColor: '#38bdf8', finColor: '#fb7185',
-        basePrice: 30, passiveRate: 1, growthTime: 55,
+        basePrice: 28, passiveRate: 1, growthTime: 180,
         desc: '華麗寬大的豹紋大三角扇尾與細長銀藍身軀，在水中輕盈擺動。'
     },
     {
         id: 'neon_tetra', name: '紅蓮燈', rarity: 'Common', icon: '💠',
         bodyType: 'tetra', baseColor: '#1d4ed8', secColor: '#ef4444', finColor: '#93c5fd',
-        basePrice: 35, passiveRate: 1, growthTime: 60,
+        basePrice: 32, passiveRate: 1, growthTime: 200,
         desc: '體側貫穿一道螢光電光藍縱帶與鮮紅腹部，群游時宛如水下霓虹。'
     },
     {
         id: 'goldfish', name: '流金金魚', rarity: 'Common', icon: '🐡',
         bodyType: 'goldfish', baseColor: '#f59e0b', secColor: '#fef3c7', finColor: '#fb923c',
-        basePrice: 45, passiveRate: 2, growthTime: 70,
+        basePrice: 42, passiveRate: 1, growthTime: 230,
         desc: '圓潤飽滿的橙金鱗片身軀搭配飄逸雙尾紗鰭，游姿優雅從容。'
     },
     {
         id: 'zebra_danio', name: '斑馬魚', rarity: 'Common', icon: '🦓',
         bodyType: 'tetra', baseColor: '#e2e8f0', secColor: '#1e3a8a', finColor: '#cbd5e1',
-        basePrice: 40, passiveRate: 1, growthTime: 65,
+        basePrice: 36, passiveRate: 1, growthTime: 210,
         desc: '流線型銀白身軀披著深藍平行條紋，活潑好動且適應力極強。'
     },
     {
         id: 'clownfish', name: '公子小丑魚', rarity: 'Rare', icon: '🐠',
         bodyType: 'clown', baseColor: '#ea580c', secColor: '#ffffff', finColor: '#fb923c',
-        basePrice: 75, passiveRate: 3, growthTime: 85,
+        basePrice: 70, passiveRate: 2, growthTime: 280,
         desc: '鮮豔橘紅鱗片搭配三道鑲黑邊的純白垂直橫帶，雙胸鰭如船槳般活潑划動。'
     },
     {
         id: 'blue_tang', name: '藍倒吊', rarity: 'Rare', icon: '🐟',
         bodyType: 'tang', baseColor: '#2563eb', secColor: '#0f172a', finColor: '#facc15',
-        basePrice: 90, passiveRate: 4, growthTime: 95,
+        basePrice: 85, passiveRate: 2, growthTime: 310,
         desc: '皇家寶藍橢圓側扁身軀點綴調色盤黑斑與鮮黃尾鰭，泳速敏捷。'
     },
     {
         id: 'angelfish', name: '神仙魚', rarity: 'Rare', icon: '🦋',
         bodyType: 'angel', baseColor: '#e2e8f0', secColor: '#1e293b', finColor: '#fde047',
-        basePrice: 110, passiveRate: 5, growthTime: 105,
+        basePrice: 100, passiveRate: 3, growthTime: 340,
         desc: '極致側扁的菱形銀鱗身軀與修長飄逸的上下絲狀鰭條，氣質高雅。'
     },
     {
         id: 'yellow_tang', name: '黃金吊', rarity: 'Rare', icon: '🍋',
         bodyType: 'tang', baseColor: '#eab308', secColor: '#ca8a04', finColor: '#fef08a',
-        basePrice: 120, passiveRate: 5, growthTime: 110,
+        basePrice: 110, passiveRate: 3, growthTime: 360,
         desc: '通體耀眼檸檬黃的側扁身軀，如同水中游動的陽光寶石。'
     },
     {
         id: 'betta', name: '半月鬥魚', rarity: 'Epic', icon: '🌺',
         bodyType: 'betta', baseColor: '#be123c', secColor: '#4f46e5', finColor: '#f43f5e',
-        basePrice: 190, passiveRate: 7, growthTime: 125,
+        basePrice: 180, passiveRate: 4, growthTime: 420,
         desc: '展開如 180 度半月般的絲絨放射狀大尾鰭，寶石紅與靛紫光澤交織。'
     },
     {
         id: 'lionfish', name: '簑鮋 (獅子魚)', rarity: 'Epic', icon: '🦁',
         bodyType: 'lion', baseColor: '#991b1b', secColor: '#fef2f2', finColor: '#fca5a5',
-        basePrice: 240, passiveRate: 9, growthTime: 140,
+        basePrice: 220, passiveRate: 5, growthTime: 460,
         desc: '紅白斑馬條紋身軀配以華麗放射狀羽翼長棘，如水下貴族般巡遊。'
     },
     {
         id: 'discus', name: '七彩神仙魚', rarity: 'Epic', icon: '🎨',
         bodyType: 'angel', baseColor: '#0284c7', secColor: '#f97316', finColor: '#38bdf8',
-        basePrice: 270, passiveRate: 11, growthTime: 150,
+        basePrice: 250, passiveRate: 6, growthTime: 490,
         desc: '圓盤狀身軀繪滿土耳其藍與橘紅波浪紋理，被譽為熱帶魚之王。'
     },
     {
         id: 'arowana', name: '過背金龍魚', rarity: 'Mythic', icon: '🐉',
         bodyType: 'arowana', baseColor: '#d97706', secColor: '#fef08a', finColor: '#b45309',
-        basePrice: 480, passiveRate: 16, growthTime: 175,
+        basePrice: 450, passiveRate: 8, growthTime: 580,
         desc: '修長霸氣的黃金金屬大片鱗甲與下顎雙觸鬚，游動時展現王者波浪律動。'
     },
     {
         id: 'mola_mola', name: '翻車魚 (曼波魚)', rarity: 'Mythic', icon: '🌊',
         bodyType: 'mola', baseColor: '#94a3b8', secColor: '#475569', finColor: '#64748b',
-        basePrice: 540, passiveRate: 19, growthTime: 185,
+        basePrice: 500, passiveRate: 10, growthTime: 620,
         desc: '銀灰斑駁的粗糙皮革質感巨型側扁身軀，靠上下兩片船舵狀長鰭悠然划水。'
     },
     {
         id: 'koi_kohaku', name: '丹頂紅白錦鯉', rarity: 'Mythic', icon: '🎏',
         bodyType: 'arowana', baseColor: '#f8fafc', secColor: '#dc2626', finColor: '#fee2e2',
-        basePrice: 600, passiveRate: 22, growthTime: 195,
+        basePrice: 560, passiveRate: 11, growthTime: 650,
         desc: '雪白無瑕的身軀頭頂一抹鮮紅圓斑，象徵好運與優雅的東方名魚。'
     },
     {
         id: 'glo_tetra', name: '螢光冰藍斑馬', rarity: 'Rare', icon: '💠',
         bodyType: 'tetra', baseColor: '#0284c7', secColor: '#22d3ee', finColor: '#67e8f9',
         glowColor: '#22d3ee',
-        basePrice: 130, passiveRate: 6, growthTime: 90,
+        basePrice: 120, passiveRate: 3, growthTime: 300,
         desc: '具備天然生物螢光基因，當切換至「深海夜光」模式時全身會散發夢幻電光藍微光。'
     },
     {
         id: 'neon_angel', name: '夜光紫晶神仙', rarity: 'Epic', icon: '🔮',
         bodyType: 'angel', baseColor: '#4c1d95', secColor: '#e879f9', finColor: '#f0abfc',
         glowColor: '#e879f9',
-        basePrice: 290, passiveRate: 12, growthTime: 145,
+        basePrice: 270, passiveRate: 6, growthTime: 480,
         desc: '深邃紫羅蘭魚身鑲嵌螢光粉紫條紋，在暗處宛如漂浮的霓虹水晶。'
     },
     {
         id: 'abyss_dragon', name: '深淵星光龍魚', rarity: 'Mythic', icon: '🌌',
         bodyType: 'arowana', baseColor: '#0f172a', secColor: '#34d399', finColor: '#6ee7b7',
         glowColor: '#10b981',
-        basePrice: 680, passiveRate: 26, growthTime: 205,
+        basePrice: 640, passiveRate: 13, growthTime: 680,
         desc: '棲息於幽暗深水的傳說神魚，夜幕降臨時鱗片縫隙與雙鬚會綻放翡翠星光。'
     }
 ];
@@ -439,61 +465,76 @@ const SEED_PACKS = [
 const UPGRADES_DATA = [
     {
         id: 'tankLevel', name: '全景超白玻璃魚缸擴建', icon: '📐', maxLevel: 5,
-        costs: [0, 140, 320, 680, 1300],
-        desc: (lv) => `提升魚缸最大容納數量（目前上限：${getMaxCapacity(lv)} 隻魚）`
+        costs: [0, 220, 560, 1280, 2600],
+        desc: (lv) => `實際擴大 3D 魚缸尺寸與容納上限（目前：${getMaxCapacity(lv)} 隻魚 • ${Math.round((1 + (lv - 1) * 0.14) * 100)}% 空間）`
     },
     {
         id: 'foodLevel', name: '高營養螺旋藻精煉飼料', icon: '🥫', maxLevel: 5,
-        costs: [0, 110, 260, 520, 980],
+        costs: [0, 180, 460, 1050, 2100],
         desc: (lv) => `每顆飼料提供更多成長經驗（目前成長加成：+${(lv - 1) * 35}%）`
     },
     {
         id: 'filterLevel', name: '高效生物過濾系統', icon: '🫧', maxLevel: 5,
-        costs: [0, 130, 300, 620, 1180],
-        desc: (lv) => `水質清澈讓成魚更活躍，提升被動金幣收益（目前加成：+${(lv - 1) * 20}%）`
+        costs: [0, 200, 520, 1180, 2400],
+        desc: (lv) => `水質清澈讓成魚更活躍，提升被動金幣收益（目前加成：+${(lv - 1) * 15}%）`
     },
     {
         id: 'heaterLevel', name: '微電腦恆溫加熱棒', icon: '🌡️', maxLevel: 5,
-        costs: [0, 150, 340, 700, 1350],
+        costs: [0, 240, 600, 1350, 2750],
         desc: (lv) => `維持理想水溫，加速所有魚苗自然成長速度（目前加速：+${(lv - 1) * 18}%）`
     },
     {
         id: 'lampLevel', name: '全光譜水草造景燈', icon: '💡', maxLevel: 5,
-        costs: [0, 180, 420, 860, 1600],
+        costs: [0, 280, 720, 1600, 3200],
         desc: (lv) => `促進基因顯色，提高孵化出「✨ 異色變異」魚苗的機率（目前機率：${8 + (lv - 1) * 4}%）`
     }
 ];
 
 const DECOR_ITEMS = [
     {
-        id: 'driftwood', name: '天然杜鵑根沉木', price: 90, icon: '🪵',
-        bonusText: '所有魚類自然成長速度 +10%',
-        pos: { x: -2.6, z: -1.1 }
+        id: 'ceramic_mug', name: '復古馬克杯小屋', price: 65, icon: '☕',
+        desc: '斜倒在白沙上的暖白陶瓷馬克杯，是小魚最喜歡鑽進鑽出的生活感躲避屋。',
+        defaultPos: { x: -2.4, z: -0.9, rotY: 0.45 }
     },
     {
-        id: 'coral', name: '粉彩鹿角活珊瑚', price: 150, icon: '🪸',
-        bonusText: '成魚被動療癒金幣收益 +15%',
-        pos: { x: 2.5, z: -0.9 }
+        id: 'moai_statue', name: '復活節島摩艾石像', price: 85, icon: '🗿',
+        desc: '表情呆萌療癒的迷你石雕像，替桌面水族箱增添一抹幽默日常氣息。',
+        defaultPos: { x: 2.3, z: -1.1, rotY: -0.35 }
     },
     {
-        id: 'volcano', name: '迷你火山氣泡石', price: 210, icon: '🌋',
-        bonusText: '增加水體溶氧量，自然成長速度 +10%',
-        pos: { x: 0.2, z: -1.4 }
+        id: 'sunken_boat', name: '迷你木造小漁船', price: 110, icon: '⛵',
+        desc: '靜靜停泊在沙地上的精緻木船模型，營造悠閒的海邊度假氛圍。',
+        defaultPos: { x: 0.1, z: 1.1, rotY: 0.25 }
     },
     {
-        id: 'castle', name: '苔蘚古堡微縮造景', price: 280, icon: '🏰',
-        bonusText: '成魚出售價格提升 +20%',
-        pos: { x: 0.0, z: 1.3 }
+        id: 'diver_helmet', name: '黃銅潛水員頭盔', price: 130, icon: '🤿',
+        desc: '經典復古圓窗潛水頭盔擺飾，充滿探索海洋的童趣想像。',
+        defaultPos: { x: -2.1, z: 1.1, rotY: 0.6 }
     },
     {
-        id: 'lantern', name: '枯山水石燈籠', price: 340, icon: '🏮',
-        bonusText: 'Zen 禪意氛圍，成魚出售價格再 +15%',
-        pos: { x: -2.3, z: 1.2 }
+        id: 'moss_stone_arch', name: '溪流青苔拱門石', price: 95, icon: '🪨',
+        desc: '覆滿翠綠水苔的天然圓弧石橋，讓魚群能自由穿梭其中。',
+        defaultPos: { x: 0.0, z: -1.2, rotY: 0.0 }
     },
     {
-        id: 'crystal', name: '深海發光水晶簇', price: 420, icon: '💎',
-        bonusText: '全魚缸被動金幣收益 +25%',
-        pos: { x: 2.4, z: 1.2 }
+        id: 'terracotta_pot', name: '園藝紅陶小花盆', price: 75, icon: '🪴',
+        desc: '種著一叢茂密水榕的紅陶盆栽，就像把陽台小花園搬進水裡。',
+        defaultPos: { x: 2.2, z: 1.0, rotY: -0.5 }
+    },
+    {
+        id: 'aquatic_plants', name: '茂密翠綠水草叢', price: 55, icon: '🌿',
+        desc: '隨水流輕柔搖曳的修長水草叢，為魚缸增添自然森林層次感。',
+        defaultPos: { x: -1.3, z: -1.3, rotY: 0.2 }
+    },
+    {
+        id: 'velvet_moss', name: '圓潤絨毛青苔球', price: 50, icon: '🟢',
+        desc: '像綠絲絨般飽滿可愛的青苔石球，擺在沙地上療癒感十足。',
+        defaultPos: { x: 1.4, z: -1.2, rotY: 0.0 }
+    },
+    {
+        id: 'sea_anemone', name: '粉彩珊瑚海葵花', price: 120, icon: '🌺',
+        desc: '觸手隨水波微微律動的粉紫海葵花，小丑魚最喜歡依偎在旁。',
+        defaultPos: { x: -0.9, z: 1.0, rotY: 0.4 }
     }
 ];
 
@@ -515,6 +556,7 @@ let gameState = {
     lighting: 'day',
     timeScale: 1,
     unlockedDecors: [],
+    placedDecors: {},
     discoveredSpecies: ['guppy', 'neon_tetra'],
     fishes: [],
     lastSaveTime: Date.now()
@@ -543,14 +585,21 @@ function loadGame() {
             if (!gameState.lampLevel) gameState.lampLevel = 1;
             if (!Array.isArray(gameState.fishes)) gameState.fishes = [];
             if (!Array.isArray(gameState.unlockedDecors)) gameState.unlockedDecors = [];
+            if (!gameState.placedDecors || typeof gameState.placedDecors !== 'object') gameState.placedDecors = {};
             if (!Array.isArray(gameState.discoveredSpecies)) gameState.discoveredSpecies = [];
 
-            const now = Date.now();
-            const lastTime = gameState.lastSaveTime || now;
-            const elapsedSec = Math.max(0, Math.min(86400 * 7, (now - lastTime) / 1000));
+            // 相容舊版已購買造景自動轉換為已擺放座標
+            gameState.unlockedDecors.forEach(dId => {
+                const def = DECOR_ITEMS.find(d => d.id === dId);
+                if (def && !gameState.placedDecors[dId]) {
+                    gameState.placedDecors[dId] = { ...def.defaultPos };
+                }
+            });
 
-            if (elapsedSec >= 30 && gameState.fishes.length > 0) {
-                simulateOfflineProgress(elapsedSec);
+            const now = Date.now();
+            const elapsedSec = Math.max(0, (now - (gameState.lastSaveTime || now)) / 1000);
+            if (elapsedSec > 10 && gameState.fishes.length > 0) {
+                simulateOfflineProgress(Math.min(elapsedSec, 86400 * 3));
             }
         } else {
             createFishInstance('guppy', false, '小綠', 25);
@@ -569,9 +618,7 @@ function simulateOfflineProgress(elapsedSec) {
     offlineElapsedMinutes = Math.max(1, Math.round(elapsedSec / 60));
 
     let totalOfflineCoins = 0;
-    const growthMultiplier = (1 + (gameState.heaterLevel - 1) * 0.18)
-        * (gameState.unlockedDecors.includes('driftwood') ? 1.10 : 1)
-        * (gameState.unlockedDecors.includes('volcano') ? 1.10 : 1);
+    const growthMultiplier = 1 + (gameState.heaterLevel - 1) * 0.12;
 
     gameState.fishes.forEach(fish => {
         const sp = FISH_SPECIES.find(s => s.id === fish.speciesId);
@@ -591,29 +638,66 @@ function simulateOfflineProgress(elapsedSec) {
             if (fish.growthProgress >= 100) {
                 events.push(`🎉 <strong>${fish.name}</strong>（${sp.name}）已順利長大成「成魚」了！`);
                 const adultDuration = Math.max(0, elapsedSec - ((100 - prevProgress) / offlineGrowthRate));
-                if (adultDuration > 25) {
-                    const coinsEarned = Math.floor((adultDuration / 25) * getFishPassiveIncome(fish) * 0.45);
+                if (adultDuration > 60) {
+                    const coinsEarned = Math.floor((adultDuration / 60) * getFishPassiveIncome(fish) * 0.25);
                     totalOfflineCoins += coinsEarned;
                 }
             } else if (!wasJuvenile && fish.growthProgress >= 40) {
                 events.push(`🌱 <strong>${fish.name}</strong>（${sp.name}）從魚苗成長為「幼魚」階段。`);
             }
         } else {
-            const coinsEarned = Math.floor((elapsedSec / 25) * getFishPassiveIncome(fish) * 0.45);
+            const coinsEarned = Math.floor((elapsedSec / 60) * getFishPassiveIncome(fish) * 0.25);
             totalOfflineCoins += coinsEarned;
         }
     });
 
     if (totalOfflineCoins > 0) {
+        const capCoins = 2500 * gameState.tankLevel;
+        totalOfflineCoins = Math.min(capCoins, totalOfflineCoins);
         gameState.coins += totalOfflineCoins;
         events.unshift(`🪙 離線期間成魚群共累積產出了 <strong>+${totalOfflineCoins} 療癒金幣</strong>！`);
     }
 
-    if (events.length === 0) {
-        events.push(`💧 魚缸水質穩定，${gameState.fishes.length} 隻魚兒在您離開期間悠閒地游動著。`);
+    offlineReportEvents = events;
+}
+
+const BASE_TANK = {
+    w: 8.6,
+    h: 5.0,
+    d: 4.8,
+    waterTop: 2.25,
+    sandTop: -2.15
+};
+
+const TANK = { ...BASE_TANK };
+
+function applyTankSizeUpgrade() {
+    const lv = gameState.tankLevel || 1;
+    const wScale = 1 + (lv - 1) * 0.14;
+    const hScale = 1 + (lv - 1) * 0.08;
+    const dScale = 1 + (lv - 1) * 0.14;
+
+    TANK.w = BASE_TANK.w * wScale;
+    TANK.h = BASE_TANK.h * hScale;
+    TANK.d = BASE_TANK.d * dScale;
+    TANK.waterTop = TANK.h / 2 - 0.25;
+    TANK.sandTop = -TANK.h / 2 + 0.35;
+
+    if (aquariumGroup) {
+        while (aquariumGroup.children.length > 0) {
+            aquariumGroup.remove(aquariumGroup.children[0]);
+        }
+        seaweeds = [];
+        godRays = [];
+        buildAquariumEnvironment();
     }
 
-    offlineReportEvents = events;
+    bubbles.forEach(b => {
+        b.mesh.position.x = -TANK.w / 2 + 0.9 + (Math.random() - 0.5) * 0.6;
+        b.mesh.position.z = -TANK.d / 2 + 0.9 + (Math.random() - 0.5) * 0.6;
+    });
+
+    sync3DDecors(true);
 }
 
 window.addEventListener('beforeunload', () => saveGame());
@@ -710,14 +794,9 @@ let initialPinchRadius = 11.2;
 
 let selectedFishId = null;
 let zenMode = false;
-
-const TANK = {
-    w: 8.6,
-    h: 5.0,
-    d: 4.8,
-    waterTop: 2.25,
-    sandTop: -2.15
-};
+let decorEditMode = false;
+let selectedDecorId = null;
+let isDraggingDecor = false;
 
 function initThree() {
     const container = document.getElementById('canvas-container');
@@ -813,6 +892,10 @@ function createCausticsTexture() {
 }
 
 function buildAquariumEnvironment() {
+    const wScale = TANK.w / BASE_TANK.w;
+    const hScale = TANK.h / BASE_TANK.h;
+    const dScale = TANK.d / BASE_TANK.d;
+
     const baseGeo = new THREE.BoxGeometry(TANK.w + 0.36, 0.28, TANK.d + 0.36);
     const baseMat = new THREE.MeshStandardMaterial({ color: '#111827', roughness: 0.4, metalness: 0.6 });
     const baseMesh = new THREE.Mesh(baseGeo, baseMat);
@@ -857,7 +940,7 @@ function buildAquariumEnvironment() {
     aquariumGroup.add(causticsMesh);
 
     for (let r = 0; r < 5; r++) {
-        const rayGeo = new THREE.ConeGeometry(0.9 + r * 0.2, 4.3, 16, 1, true);
+        const rayGeo = new THREE.ConeGeometry((0.9 + r * 0.2) * wScale, TANK.h - 0.7, 16, 1, true);
         const rayMat = new THREE.MeshBasicMaterial({
             color: '#bae6fd',
             transparent: true,
@@ -867,7 +950,7 @@ function buildAquariumEnvironment() {
             depthWrite: false
         });
         const rayMesh = new THREE.Mesh(rayGeo, rayMat);
-        rayMesh.position.set(-2.5 + r * 1.25, 0.15, -0.4 + (r % 2) * 0.7);
+        rayMesh.position.set((-2.5 + r * 1.25) * wScale, 0.15, (-0.4 + (r % 2) * 0.7) * dScale);
         rayMesh.rotation.z = 0.08;
         aquariumGroup.add(rayMesh);
         godRays.push({ mesh: rayMesh, phase: r * 1.3 });
@@ -906,7 +989,7 @@ function buildAquariumEnvironment() {
     ];
     pebbleCoords.forEach(([x, z, r]) => {
         const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(r, 1), rockMat);
-        rock.position.set(x, TANK.sandTop + r * 0.45, z);
+        rock.position.set(x * wScale, TANK.sandTop + r * 0.45, z * dScale);
         rock.scale.set(1.2, 0.75, 1);
         rock.castShadow = true;
         rock.receiveShadow = true;
@@ -920,38 +1003,41 @@ function buildAquariumEnvironment() {
     ];
     weedPositions.forEach(([x, z, h], idx) => {
         const segs = 6;
-        const bladeGeo = new THREE.PlaneGeometry(0.18, h, 1, segs);
-        bladeGeo.translate(0, h / 2, 0);
+        const bladeH = h * hScale;
+        const bladeGeo = new THREE.PlaneGeometry(0.18, bladeH, 1, segs);
+        bladeGeo.translate(0, bladeH / 2, 0);
         const bladeMat = new THREE.MeshStandardMaterial({
             color: idx % 2 === 0 ? '#10b981' : '#059669',
             roughness: 0.6,
             side: THREE.DoubleSide
         });
         const blade = new THREE.Mesh(bladeGeo, bladeMat);
-        blade.position.set(x, TANK.sandTop, z);
+        blade.position.set(x * wScale, TANK.sandTop, z * dScale);
         blade.rotation.y = idx * 0.8;
         aquariumGroup.add(blade);
         seaweeds.push({ mesh: blade, phase: idx * 1.1, baseRotZ: 0 });
     });
 
-    const bubbleGeo = new THREE.SphereGeometry(0.045, 8, 8);
-    const bubbleMat = new THREE.MeshPhysicalMaterial({
-        color: '#e0f2fe',
-        transparent: true,
-        opacity: 0.55,
-        roughness: 0.1
-    });
-    for (let i = 0; i < 24; i++) {
-        const b = new THREE.Mesh(bubbleGeo, bubbleMat);
-        b.position.set(
-            -3.3 + (Math.random() - 0.5) * 0.6,
-            TANK.sandTop + Math.random() * 4.2,
-            -1.5 + (Math.random() - 0.5) * 0.6
-        );
-        const s = 0.5 + Math.random() * 0.9;
-        b.scale.setScalar(s);
-        bubbleGroup.add(b);
-        bubbles.push({ mesh: b, speed: 0.45 + Math.random() * 0.55, wobble: Math.random() * 6.28 });
+    if (bubbles.length === 0) {
+        const bubbleGeo = new THREE.SphereGeometry(0.045, 8, 8);
+        const bubbleMat = new THREE.MeshPhysicalMaterial({
+            color: '#e0f2fe',
+            transparent: true,
+            opacity: 0.55,
+            roughness: 0.1
+        });
+        for (let i = 0; i < 24; i++) {
+            const b = new THREE.Mesh(bubbleGeo, bubbleMat);
+            b.position.set(
+                -TANK.w / 2 + 0.9 + (Math.random() - 0.5) * 0.6,
+                TANK.sandTop + Math.random() * (TANK.h - 0.8),
+                -TANK.d / 2 + 0.9 + (Math.random() - 0.5) * 0.6
+            );
+            const s = 0.5 + Math.random() * 0.9;
+            b.scale.setScalar(s);
+            bubbleGroup.add(b);
+            bubbles.push({ mesh: b, speed: 0.45 + Math.random() * 0.55, wobble: Math.random() * 6.28 });
+        }
     }
 }
 
@@ -1531,95 +1617,195 @@ function buildFishMesh(species, isShiny) {
         bodyMat,
         finMat,
         glowColor: species.glowColor || null,
+        basePositions,
+        bodyLen: len,
         tailPivot,
         dorsalMesh,
         pecPivotL,
         pecPivotR,
         gillL,
         gillR,
-        basePositions,
-        bodyLen: len,
-        pos: new THREE.Vector3((Math.random() - 0.5) * 5, (Math.random() - 0.5) * 2.5, (Math.random() - 0.5) * 3),
-        vel: new THREE.Vector3((Math.random() - 0.5) * 0.8, 0, (Math.random() - 0.5) * 0.8),
-        target: new THREE.Vector3((Math.random() - 0.5) * 6, (Math.random() - 0.5) * 3, (Math.random() - 0.5) * 3.2),
-        swimPhase: Math.random() * 10,
-        decisionTimer: 1 + Math.random() * 3
+        pos: new THREE.Vector3(
+            (Math.random() - 0.5) * (TANK.w - 2.2),
+            TANK.sandTop + 0.8 + Math.random() * (TANK.h - 1.8),
+            (Math.random() - 0.5) * (TANK.d - 1.8)
+        ),
+        vel: new THREE.Vector3((Math.random() - 0.5) * 0.5, 0, (Math.random() - 0.5) * 0.5),
+        target: new THREE.Vector3(0, 0, 0),
+        decisionTimer: 0,
+        swimPhase: Math.random() * Math.PI * 2
     };
     root.position.copy(meshState.pos);
     return meshState;
 }
 
-// 6. 3D 造景模型建構器
+// 6. 3D 造景模型建構器（純美觀生活化擺設）
 function buildDecorMesh(decorId) {
     const group = new THREE.Group();
-    if (decorId === 'driftwood') {
-        const woodMat = new THREE.MeshStandardMaterial({ color: '#5c4033', roughness: 0.9 });
-        const mossMat = new THREE.MeshStandardMaterial({ color: '#4d7c0f', roughness: 0.85 });
-        const branch1 = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.24, 1.8, 8), woodMat);
-        branch1.rotation.z = -0.65;
-        branch1.position.y = 0.55;
-        const branch2 = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.16, 1.3, 8), woodMat);
-        branch2.rotation.set(0.4, 0.3, 0.55);
-        branch2.position.set(0.3, 0.55, 0.1);
-        const moss = new THREE.Mesh(new THREE.SphereGeometry(0.24, 8, 8), mossMat);
-        moss.scale.set(1.4, 0.5, 1.1);
-        moss.position.set(-0.2, 0.65, 0);
-        group.add(branch1, branch2, moss);
-    } else if (decorId === 'coral') {
-        const coralMat = new THREE.MeshStandardMaterial({ color: '#fb7185', roughness: 0.65 });
-        const base = new THREE.Mesh(new THREE.DodecahedronGeometry(0.32, 1), coralMat);
-        base.position.y = 0.25;
-        group.add(base);
+    if (decorId === 'ceramic_mug') {
+        const mugMat = new THREE.MeshStandardMaterial({ color: '#f8fafc', roughness: 0.25, metalness: 0.05 });
+        const innerMat = new THREE.MeshStandardMaterial({ color: '#0f172a', roughness: 0.85, side: THREE.BackSide });
+        const stripeMat = new THREE.MeshStandardMaterial({ color: '#38bdf8', roughness: 0.3 });
+        const body = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.34, 0.78, 20, 1, true), mugMat);
+        body.rotation.z = Math.PI / 2;
+        body.position.y = 0.35;
+        const inner = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.32, 0.76, 20, 1, true), innerMat);
+        inner.rotation.z = Math.PI / 2;
+        inner.position.y = 0.35;
+        const bottom = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.06, 20), mugMat);
+        bottom.rotation.z = Math.PI / 2;
+        bottom.position.set(-0.37, 0.35, 0);
+        const stripe = new THREE.Mesh(new THREE.CylinderGeometry(0.365, 0.365, 0.14, 20, 1, true), stripeMat);
+        stripe.rotation.z = Math.PI / 2;
+        stripe.position.set(0.15, 0.35, 0);
+        const handle = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.045, 10, 20, Math.PI), mugMat);
+        handle.position.set(0, 0.62, 0);
+        group.add(body, inner, bottom, stripe, handle);
+    } else if (decorId === 'moai_statue') {
+        const stoneMat = new THREE.MeshStandardMaterial({ color: '#64748b', roughness: 0.92 });
+        const darkStone = new THREE.MeshStandardMaterial({ color: '#475569', roughness: 0.95 });
+        const head = new THREE.Mesh(new THREE.BoxGeometry(0.56, 1.15, 0.48), stoneMat);
+        head.position.y = 0.58;
+        const brow = new THREE.Mesh(new THREE.BoxGeometry(0.60, 0.14, 0.24), darkStone);
+        brow.position.set(0, 0.92, 0.18);
+        const nose = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.42, 0.22), stoneMat);
+        nose.rotation.x = -0.15;
+        nose.position.set(0, 0.68, 0.26);
+        const chin = new THREE.Mesh(new THREE.BoxGeometry(0.50, 0.22, 0.18), darkStone);
+        chin.position.set(0, 0.32, 0.20);
+        group.add(head, brow, nose, chin);
+    } else if (decorId === 'sunken_boat') {
+        const woodMat = new THREE.MeshStandardMaterial({ color: '#78350f', roughness: 0.85 });
+        const trimMat = new THREE.MeshStandardMaterial({ color: '#fef3c7', roughness: 0.6 });
+        const hull = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.18, 1.35, 12, 1, false, 0, Math.PI), woodMat);
+        hull.rotation.set(0, 0, Math.PI / 2);
+        hull.rotation.x = Math.PI / 2 + 0.15;
+        hull.position.y = 0.22;
+        const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.035, 0.85, 8), woodMat);
+        mast.position.set(0.05, 0.55, 0);
+        mast.rotation.z = -0.12;
+        const cabin = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.22, 0.32), trimMat);
+        cabin.position.set(-0.22, 0.34, 0);
+        group.add(hull, mast, cabin);
+    } else if (decorId === 'diver_helmet') {
+        const brassMat = new THREE.MeshStandardMaterial({ color: '#d97706', roughness: 0.35, metalness: 0.72 });
+        const glassMat = new THREE.MeshPhysicalMaterial({ color: '#bae6fd', roughness: 0.1, transparent: true, opacity: 0.65 });
+        const dome = new THREE.Mesh(new THREE.SphereGeometry(0.42, 18, 16), brassMat);
+        dome.position.y = 0.44;
+        const collar = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.52, 0.16, 18), brassMat);
+        collar.position.y = 0.08;
+        const windowRim = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.035, 8, 18), brassMat);
+        windowRim.position.set(0, 0.46, 0.38);
+        const windowPane = new THREE.Mesh(new THREE.CircleGeometry(0.15, 16), glassMat);
+        windowPane.position.set(0, 0.46, 0.39);
+        group.add(dome, collar, windowRim, windowPane);
+    } else if (decorId === 'moss_stone_arch') {
+        const rockMat = new THREE.MeshStandardMaterial({ color: '#475569', roughness: 0.9 });
+        const mossMat = new THREE.MeshStandardMaterial({ color: '#15803d', roughness: 0.85 });
+        const arch = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.18, 10, 20, Math.PI), rockMat);
+        arch.position.y = 0.05;
+        const mossTop = new THREE.Mesh(new THREE.TorusGeometry(0.62, 0.11, 8, 18, Math.PI * 0.75), mossMat);
+        mossTop.rotation.z = Math.PI * 0.125;
+        mossTop.position.y = 0.09;
+        group.add(arch, mossTop);
+    } else if (decorId === 'terracotta_pot') {
+        const clayMat = new THREE.MeshStandardMaterial({ color: '#c2410c', roughness: 0.82 });
+        const soilMat = new THREE.MeshStandardMaterial({ color: '#292524', roughness: 0.95 });
+        const leafMat = new THREE.MeshStandardMaterial({ color: '#16a34a', roughness: 0.55, side: THREE.DoubleSide });
+        const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.22, 0.44, 16), clayMat);
+        pot.position.y = 0.22;
+        const rim = new THREE.Mesh(new THREE.TorusGeometry(0.32, 0.04, 8, 16), clayMat);
+        rim.rotation.x = Math.PI / 2;
+        rim.position.y = 0.43;
+        const soil = new THREE.Mesh(new THREE.CircleGeometry(0.29, 14), soilMat);
+        soil.rotation.x = -Math.PI / 2;
+        soil.position.y = 0.41;
+        group.add(pot, rim, soil);
         for (let i = 0; i < 6; i++) {
-            const limb = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.11, 0.75 + (i % 3) * 0.2, 7), coralMat);
-            const angle = (i / 6) * Math.PI * 2;
-            limb.position.set(Math.cos(angle) * 0.22, 0.62, Math.sin(angle) * 0.22);
-            limb.rotation.set(Math.sin(angle) * 0.45, 0, -Math.cos(angle) * 0.45);
-            group.add(limb);
+            const leaf = new THREE.Mesh(new THREE.PlaneGeometry(0.14, 0.42), leafMat);
+            const ang = (i / 6) * Math.PI * 2;
+            leaf.position.set(Math.cos(ang) * 0.1, 0.56, Math.sin(ang) * 0.1);
+            leaf.rotation.set(0.35 * Math.sin(ang), ang, -0.35 * Math.cos(ang));
+            group.add(leaf);
         }
-    } else if (decorId === 'volcano') {
-        const rockMat = new THREE.MeshStandardMaterial({ color: '#334155', roughness: 0.92 });
-        const lavaMat = new THREE.MeshBasicMaterial({ color: '#f97316' });
-        const cone = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.72, 0.95, 12), rockMat);
-        cone.position.y = 0.47;
-        const crater = new THREE.Mesh(new THREE.CircleGeometry(0.18, 12), lavaMat);
-        crater.rotation.x = -Math.PI / 2;
-        crater.position.y = 0.955;
-        group.add(cone, crater);
-    } else if (decorId === 'castle') {
-        const stoneMat = new THREE.MeshStandardMaterial({ color: '#94a3b8', roughness: 0.8 });
-        const roofMat = new THREE.MeshStandardMaterial({ color: '#0284c7', roughness: 0.5 });
-        const body = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.9, 0.75), stoneMat);
-        body.position.y = 0.45;
-        const tower = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.26, 1.35, 10), stoneMat);
-        tower.position.set(-0.35, 0.67, 0.25);
-        const roof = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.45, 10), roofMat);
-        roof.position.set(-0.35, 1.55, 0.25);
-        group.add(body, tower, roof);
-    } else if (decorId === 'lantern') {
-        const stoneMat = new THREE.MeshStandardMaterial({ color: '#64748b', roughness: 0.85 });
-        const glowMat = new THREE.MeshBasicMaterial({ color: '#fde047' });
-        const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.22, 0.75, 8), stoneMat);
-        pillar.position.y = 0.37;
-        const chamber = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.32, 0.36), glowMat);
-        chamber.position.y = 0.88;
-        const cap = new THREE.Mesh(new THREE.ConeGeometry(0.45, 0.32, 6), stoneMat);
-        cap.position.y = 1.18;
-        group.add(pillar, chamber, cap);
-    } else if (decorId === 'crystal') {
-        const cryMat = new THREE.MeshPhysicalMaterial({
-            color: '#38bdf8', emissive: '#0284c7', emissiveIntensity: 0.6,
-            roughness: 0.15, metalness: 0.1, transparent: true, opacity: 0.88
+    } else if (decorId === 'aquatic_plants') {
+        const pebbleMat = new THREE.MeshStandardMaterial({ color: '#475569', roughness: 0.85 });
+        const baseRock = new THREE.Mesh(new THREE.DodecahedronGeometry(0.26, 1), pebbleMat);
+        baseRock.scale.set(1.3, 0.45, 1.1);
+        baseRock.position.y = 0.08;
+        group.add(baseRock);
+
+        const swayLeaves = [];
+        for (let i = 0; i < 9; i++) {
+            const h = 0.75 + (i % 4) * 0.24;
+            const bladeGeo = new THREE.PlaneGeometry(0.14, h, 1, 5);
+            bladeGeo.translate(0, h / 2, 0);
+            const bladeMat = new THREE.MeshStandardMaterial({
+                color: i % 2 === 0 ? '#10b981' : '#34d399',
+                roughness: 0.55,
+                side: THREE.DoubleSide
+            });
+            const blade = new THREE.Mesh(bladeGeo, bladeMat);
+            const ang = (i / 9) * Math.PI * 2;
+            const dist = 0.06 + (i % 3) * 0.06;
+            blade.position.set(Math.cos(ang) * dist, 0.1, Math.sin(ang) * dist);
+            blade.rotation.y = ang;
+            blade.rotation.z = 0.12;
+            group.add(blade);
+            swayLeaves.push({ mesh: blade, phase: i * 0.7, baseZ: 0.12 });
+        }
+        group.userData.swayLeaves = swayLeaves;
+    } else if (decorId === 'velvet_moss') {
+        const mossMat1 = new THREE.MeshStandardMaterial({ color: '#16a34a', roughness: 0.95 });
+        const mossMat2 = new THREE.MeshStandardMaterial({ color: '#22c55e', roughness: 0.92 });
+        const mainBall = new THREE.Mesh(new THREE.DodecahedronGeometry(0.34, 2), mossMat1);
+        mainBall.scale.set(1.15, 0.85, 1.05);
+        mainBall.position.set(0, 0.24, 0);
+        const sideBall1 = new THREE.Mesh(new THREE.DodecahedronGeometry(0.22, 2), mossMat2);
+        sideBall1.scale.set(1.1, 0.85, 1.0);
+        sideBall1.position.set(0.32, 0.16, 0.14);
+        const sideBall2 = new THREE.Mesh(new THREE.DodecahedronGeometry(0.16, 2), mossMat1);
+        sideBall2.position.set(-0.28, 0.12, 0.18);
+        group.add(mainBall, sideBall1, sideBall2);
+    } else if (decorId === 'sea_anemone') {
+        const stalkMat = new THREE.MeshStandardMaterial({ color: '#be185d', roughness: 0.65 });
+        const stalk = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.38, 0.24, 18), stalkMat);
+        stalk.position.y = 0.12;
+        group.add(stalk);
+
+        const tentacles = [];
+        const rings = [
+            { count: 12, radius: 0.24, height: 0.56, tilt: 0.42, color: '#f472b6' },
+            { count: 8, radius: 0.14, height: 0.48, tilt: 0.24, color: '#e879f9' },
+            { count: 5, radius: 0.05, height: 0.40, tilt: 0.10, color: '#fde047' }
+        ];
+        rings.forEach((ring, rIdx) => {
+            const tentMat = new THREE.MeshPhysicalMaterial({
+                color: ring.color,
+                emissive: new THREE.Color(ring.color),
+                emissiveIntensity: 0.18,
+                roughness: 0.3,
+                clearcoat: 0.5
+            });
+            for (let i = 0; i < ring.count; i++) {
+                const pivot = new THREE.Group();
+                const ang = (i / ring.count) * Math.PI * 2 + rIdx * 0.3;
+                pivot.position.set(Math.cos(ang) * ring.radius, 0.22, Math.sin(ang) * ring.radius);
+                pivot.rotation.y = -ang;
+
+                const tentGeo = new THREE.CylinderGeometry(0.032, 0.048, ring.height, 8);
+                tentGeo.translate(0, ring.height / 2, 0);
+                const tent = new THREE.Mesh(tentGeo, tentMat);
+                const tip = new THREE.Mesh(new THREE.SphereGeometry(0.042, 8, 8), tentMat);
+                tip.position.y = ring.height;
+
+                pivot.add(tent, tip);
+                pivot.rotation.z = -ring.tilt;
+                group.add(pivot);
+                tentacles.push({ pivot, baseTilt: -ring.tilt, phase: i * 0.6 + rIdx });
+            }
         });
-        for (let i = 0; i < 5; i++) {
-            const h = 0.55 + (i % 3) * 0.32;
-            const shard = new THREE.Mesh(new THREE.OctahedronGeometry(0.18, 0), cryMat);
-            shard.scale.set(0.8, h * 2.2, 0.8);
-            const ang = (i / 5) * Math.PI * 2;
-            shard.position.set(Math.cos(ang) * 0.2, h * 0.45, Math.sin(ang) * 0.2);
-            shard.rotation.set(Math.sin(ang) * 0.25, ang, -Math.cos(ang) * 0.25);
-            group.add(shard);
-        }
+        group.userData.tentacles = tentacles;
     }
     group.traverse(obj => {
         if (obj.isMesh) { obj.castShadow = true; obj.receiveShadow = true; }
@@ -1667,20 +1853,42 @@ function sync3DFishes() {
             fishMeshes.set(fish.uid, mState);
         }
         const mState = fishMeshes.get(fish.uid);
-        const stageScale = 0.42 + (fish.growthProgress / 100) * 0.68;
+        const stageScale = 0.42 + (Math.min(100, fish.growthProgress) / 100) * 0.68;
         mState.root.scale.setScalar(stageScale);
     });
 }
 
-function sync3DDecors() {
-    gameState.unlockedDecors.forEach(decorId => {
+function sync3DDecors(repositionAll = false) {
+    const activeIds = new Set(Object.keys(gameState.placedDecors || {}));
+    for (const [dId, mesh] of decorMeshes.entries()) {
+        if (!activeIds.has(dId)) {
+            decorGroup.remove(mesh);
+            decorMeshes.delete(dId);
+        }
+    }
+
+    const halfW = TANK.w / 2 - 0.65;
+    const halfD = TANK.d / 2 - 0.65;
+
+    activeIds.forEach(decorId => {
+        const item = DECOR_ITEMS.find(d => d.id === decorId);
+        const placement = gameState.placedDecors[decorId];
+        if (!item || !placement) return;
+
+        placement.x = Math.max(-halfW, Math.min(halfW, placement.x));
+        placement.z = Math.max(-halfD, Math.min(halfD, placement.z));
+
         if (!decorMeshes.has(decorId)) {
-            const item = DECOR_ITEMS.find(d => d.id === decorId);
-            if (!item) return;
             const mesh = buildDecorMesh(decorId);
-            mesh.position.set(item.pos.x, TANK.sandTop, item.pos.z);
+            mesh.userData.decorId = decorId;
+            mesh.position.set(placement.x, TANK.sandTop, placement.z);
+            mesh.rotation.y = placement.rotY || 0;
             decorGroup.add(mesh);
             decorMeshes.set(decorId, mesh);
+        } else if (repositionAll) {
+            const mesh = decorMeshes.get(decorId);
+            mesh.position.set(placement.x, TANK.sandTop, placement.z);
+            mesh.rotation.y = placement.rotY || 0;
         }
     });
 }
@@ -1697,18 +1905,14 @@ function getFishSellValue(fish) {
     if (fish.growthProgress >= 100) mult = 1.0;
     else if (fish.growthProgress >= 40) mult = 0.6;
     if (fish.isShiny) mult *= 2.5;
-    if (gameState.unlockedDecors.includes('castle')) mult *= 1.2;
-    if (gameState.unlockedDecors.includes('lantern')) mult *= 1.15;
     return Math.round(sp.basePrice * mult);
 }
 
 function getFishPassiveIncome(fish) {
     if (fish.growthProgress < 100) return 0;
     const sp = FISH_SPECIES.find(s => s.id === fish.speciesId);
-    let rate = sp.passiveRate * (fish.isShiny ? 2 : 1);
-    rate *= (1 + (gameState.filterLevel - 1) * 0.2);
-    if (gameState.unlockedDecors.includes('coral')) rate *= 1.15;
-    if (gameState.unlockedDecors.includes('crystal')) rate *= 1.25;
+    let rate = sp.passiveRate * (fish.isShiny ? 1.5 : 1);
+    rate *= (1 + (gameState.filterLevel - 1) * 0.12);
     return Math.max(1, Math.round(rate));
 }
 
@@ -1746,14 +1950,57 @@ function updateCameraPosition() {
 function setupControls() {
     const dom = renderer.domElement;
 
+    function getSandIntersection(clientX, clientY) {
+        pointerNDC.x = (clientX / window.innerWidth) * 2 - 1;
+        pointerNDC.y = -(clientY / window.innerHeight) * 2 + 1;
+        raycaster.setFromCamera(pointerNDC, camera);
+        const sandPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -TANK.sandTop);
+        const hit = new THREE.Vector3();
+        if (raycaster.ray.intersectPlane(sandPlane, hit)) {
+            return hit;
+        }
+        return null;
+    }
+
+    function pickDecorAt(clientX, clientY) {
+        pointerNDC.x = (clientX / window.innerWidth) * 2 - 1;
+        pointerNDC.y = -(clientY / window.innerHeight) * 2 + 1;
+        raycaster.setFromCamera(pointerNDC, camera);
+        const hits = raycaster.intersectObjects(decorGroup.children, true);
+        if (hits.length > 0) {
+            let obj = hits[0].object;
+            while (obj && !obj.userData.decorId) {
+                obj = obj.parent;
+            }
+            if (obj && obj.userData.decorId) return obj.userData.decorId;
+        }
+        return null;
+    }
+
     dom.addEventListener('mousedown', (e) => {
         if (e.button !== 0) return;
+        if (decorEditMode) {
+            const hitDecor = pickDecorAt(e.clientX, e.clientY);
+            if (hitDecor) {
+                selectDecorForEdit(hitDecor);
+                isDraggingDecor = true;
+                dragMoved = true;
+                return;
+            }
+        }
         isDragging = true;
         dragMoved = false;
         prevPointer = { x: e.clientX, y: e.clientY };
     });
 
     window.addEventListener('mousemove', (e) => {
+        if (decorEditMode && isDraggingDecor && selectedDecorId) {
+            const pt = getSandIntersection(e.clientX, e.clientY);
+            if (pt) {
+                moveSelectedDecorTo(pt.x, pt.z);
+            }
+            return;
+        }
         if (!isDragging) return;
         const dx = e.clientX - prevPointer.x;
         const dy = e.clientY - prevPointer.y;
@@ -1765,6 +2012,11 @@ function setupControls() {
     });
 
     window.addEventListener('mouseup', (e) => {
+        if (isDraggingDecor) {
+            isDraggingDecor = false;
+            saveGame();
+            return;
+        }
         if (!isDragging) return;
         isDragging = false;
         if (!dragMoved) {
@@ -1780,12 +2032,24 @@ function setupControls() {
 
     dom.addEventListener('touchstart', (e) => {
         if (e.touches.length === 1) {
+            const tx = e.touches[0].clientX;
+            const ty = e.touches[0].clientY;
+            if (decorEditMode) {
+                const hitDecor = pickDecorAt(tx, ty);
+                if (hitDecor) {
+                    selectDecorForEdit(hitDecor);
+                    isDraggingDecor = true;
+                    dragMoved = true;
+                    return;
+                }
+            }
             isDragging = true;
             dragMoved = false;
             initialPinchDist = null;
-            prevPointer = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            prevPointer = { x: tx, y: ty };
         } else if (e.touches.length === 2) {
             isDragging = false;
+            isDraggingDecor = false;
             dragMoved = true;
             const dx = e.touches[0].clientX - e.touches[1].clientX;
             const dy = e.touches[0].clientY - e.touches[1].clientY;
@@ -1796,6 +2060,14 @@ function setupControls() {
 
     dom.addEventListener('touchmove', (e) => {
         e.preventDefault();
+        if (e.touches.length === 1 && decorEditMode && isDraggingDecor && selectedDecorId) {
+            const touch = e.touches[0];
+            const pt = getSandIntersection(touch.clientX, touch.clientY);
+            if (pt) {
+                moveSelectedDecorTo(pt.x, pt.z);
+            }
+            return;
+        }
         if (e.touches.length === 1 && isDragging) {
             const touch = e.touches[0];
             const dx = touch.clientX - prevPointer.x;
@@ -1817,6 +2089,11 @@ function setupControls() {
 
     dom.addEventListener('touchend', (e) => {
         if (e.touches.length === 0) {
+            if (isDraggingDecor) {
+                isDraggingDecor = false;
+                saveGame();
+                return;
+            }
             if (isDragging && !dragMoved) {
                 handleCanvasTap(prevPointer.x, prevPointer.y);
             }
@@ -1831,6 +2108,16 @@ function handleCanvasTap(clientX, clientY) {
     pointerNDC.x = (clientX / window.innerWidth) * 2 - 1;
     pointerNDC.y = -(clientY / window.innerHeight) * 2 + 1;
     raycaster.setFromCamera(pointerNDC, camera);
+
+    if (decorEditMode) {
+        const sandPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -TANK.sandTop);
+        const hitPoint = new THREE.Vector3();
+        if (raycaster.ray.intersectPlane(sandPlane, hitPoint) && selectedDecorId) {
+            moveSelectedDecorTo(hitPoint.x, hitPoint.z);
+            saveGame();
+        }
+        return;
+    }
 
     const fishHits = raycaster.intersectObjects(fishGroup.children, true);
     if (fishHits.length > 0) {
@@ -1906,7 +2193,7 @@ function updateHUD() {
 
     let totalIncome = 0;
     gameState.fishes.forEach(f => { totalIncome += getFishPassiveIncome(f); });
-    document.getElementById('hud-income').textContent = `+${totalIncome} / 25秒`;
+    document.getElementById('hud-income').textContent = `+${totalIncome} / 分鐘`;
 
     if (selectedFishId) {
         const fish = gameState.fishes.find(f => f.uid === selectedFishId);
@@ -1969,8 +2256,8 @@ function updateInspectorContent(fish) {
     document.getElementById('insp-hunger-pct').textContent = `${hPct}%`;
     document.getElementById('insp-hunger-bar').style.width = `${hPct}%`;
 
-    const baseP = sp.passiveRate * (fish.isShiny ? 2 : 1);
-    document.getElementById('insp-passive').textContent = `+${baseP} 🪙/25s`;
+    const baseP = Math.max(1, Math.round(sp.passiveRate * (fish.isShiny ? 1.5 : 1)));
+    document.getElementById('insp-passive').textContent = `+${baseP} 🪙/分`;
 
     const lockBtn = document.getElementById('insp-lock-btn');
     lockBtn.innerHTML = fish.locked ? '<span>🔒</span> <span>已上鎖</span>' : '<span>🔓</span> <span>未上鎖</span>';
@@ -1983,7 +2270,8 @@ function updateInspectorContent(fish) {
 
 function closeInspector() {
     selectedFishId = null;
-    document.getElementById('fish-inspector').classList.add('hidden');
+    const el = document.getElementById('fish-inspector');
+    if (el) el.classList.add('hidden');
 }
 
 function renameSelectedFish(newName) {
@@ -2086,10 +2374,90 @@ function toggleZenMode() {
         if (zenMode) el.classList.add('ui-hidden');
         else el.classList.remove('ui-hidden');
     });
-    if (zenMode) closeInspector();
+    if (zenMode) {
+        closeInspector();
+        exitDecorEditMode();
+    }
     const restoreBtn = document.getElementById('restore-ui-btn');
     if (zenMode) restoreBtn.classList.remove('hidden');
     else restoreBtn.classList.add('hidden');
+}
+
+function enterDecorEditMode(decorId) {
+    closeModal();
+    closeInspector();
+    decorEditMode = true;
+    const keys = Object.keys(gameState.placedDecors || {});
+    const targetId = decorId || keys[0] || null;
+    if (targetId) selectDecorForEdit(targetId);
+    document.getElementById('decor-edit-bar').classList.remove('hidden');
+    document.getElementById('bottom-nav').classList.add('ui-hidden');
+    document.getElementById('hint-pill').querySelector('div').textContent = '🖐️ 拖曳造景自由移動位置 • 雙指或拖曳空白處轉動視角';
+}
+
+function exitDecorEditMode() {
+    decorEditMode = false;
+    selectedDecorId = null;
+    isDraggingDecor = false;
+    document.getElementById('decor-edit-bar').classList.add('hidden');
+    if (!zenMode) {
+        document.getElementById('bottom-nav').classList.remove('ui-hidden');
+    }
+    document.getElementById('hint-pill').querySelector('div').textContent = '💧 點水餵食 • 拖曳旋轉 • 點魚看詳情';
+    saveGame();
+}
+
+function selectDecorForEdit(decorId) {
+    selectedDecorId = decorId;
+    const item = DECOR_ITEMS.find(d => d.id === decorId);
+    if (item) {
+        document.getElementById('decor-edit-title').textContent = `正在擺設：${item.icon} ${item.name}`;
+    }
+}
+
+function moveSelectedDecorTo(x, z) {
+    if (!selectedDecorId || !gameState.placedDecors[selectedDecorId]) return;
+    const halfW = TANK.w / 2 - 0.65;
+    const halfD = TANK.d / 2 - 0.65;
+    const nx = Math.max(-halfW, Math.min(halfW, x));
+    const nz = Math.max(-halfD, Math.min(halfD, z));
+    gameState.placedDecors[selectedDecorId].x = nx;
+    gameState.placedDecors[selectedDecorId].z = nz;
+    const mesh = decorMeshes.get(selectedDecorId);
+    if (mesh) {
+        mesh.position.set(nx, TANK.sandTop, nz);
+    }
+}
+
+function nudgeSelectedDecor(dx, dz) {
+    if (!selectedDecorId || !gameState.placedDecors[selectedDecorId]) return;
+    const cur = gameState.placedDecors[selectedDecorId];
+    moveSelectedDecorTo((cur.x || 0) + dx, (cur.z || 0) + dz);
+    saveGame();
+}
+
+function rotateSelectedDecor(deltaAngle) {
+    if (!selectedDecorId || !gameState.placedDecors[selectedDecorId]) return;
+    const cur = gameState.placedDecors[selectedDecorId].rotY || 0;
+    const next = cur + deltaAngle;
+    gameState.placedDecors[selectedDecorId].rotY = next;
+    const mesh = decorMeshes.get(selectedDecorId);
+    if (mesh) mesh.rotation.y = next;
+    saveGame();
+}
+
+function storeSelectedDecor() {
+    if (!selectedDecorId) return;
+    delete gameState.placedDecors[selectedDecorId];
+    sync3DDecors(true);
+    saveGame();
+    showToast('已將此造景收起，隨時可從「水族造景」重新取出擺放');
+    const remaining = Object.keys(gameState.placedDecors);
+    if (remaining.length > 0) {
+        selectDecorForEdit(remaining[0]);
+    } else {
+        exitDecorEditMode();
+    }
 }
 
 // 11. 商店、升級、造景與圖鑑視窗
@@ -2165,23 +2533,35 @@ function renderModalContent() {
         }).join('');
     } else if (currentModalTab === 'decor') {
         iconEl.textContent = '🪸';
-        titleEl.textContent = '3D 水族造景佈置';
+        titleEl.textContent = '生活感水族造景（自由擺設）';
+        const hasPlacedAny = Object.keys(gameState.placedDecors || {}).length > 0;
         bodyEl.innerHTML = `
+            <div class="flex items-center justify-between bg-cyan-500/10 border border-cyan-400/25 rounded-2xl px-3.5 py-2.5">
+                <span class="text-xs text-cyan-100">純粹美觀佈置造景，購買後可自由拖曳決定擺放位置與角度。</span>
+                ${hasPlacedAny
+                    ? `<button onclick="enterDecorEditMode()" class="ml-2 px-3 py-1.5 rounded-xl bg-cyan-500/30 hover:bg-cyan-500/45 text-cyan-100 font-semibold text-xs shrink-0 transition">🖐️ 進入擺設模式</button>`
+                    : ''
+                }
+            </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 ${DECOR_ITEMS.map(item => {
                     const owned = gameState.unlockedDecors.includes(item.id);
+                    const isPlaced = Boolean(gameState.placedDecors && gameState.placedDecors[item.id]);
                     return `
                         <div class="glass-light rounded-2xl p-4 flex flex-col justify-between gap-3">
                             <div>
                                 <div class="flex items-center justify-between">
                                     <span class="text-3xl">${item.icon}</span>
-                                    ${owned ? '<span class="text-xs px-2.5 py-0.5 rounded-full bg-cyan-500/25 text-cyan-200 border border-cyan-400/30">已擺放於魚缸</span>' : ''}
+                                    ${isPlaced
+                                        ? '<span class="text-xs px-2.5 py-0.5 rounded-full bg-cyan-500/25 text-cyan-200 border border-cyan-400/30">已擺放於魚缸</span>'
+                                        : (owned ? '<span class="text-xs px-2.5 py-0.5 rounded-full bg-slate-600/40 text-slate-300">已收納</span>' : '')
+                                    }
                                 </div>
                                 <div class="font-bold text-white text-sm sm:text-base mt-2">${item.name}</div>
-                                <p class="text-xs text-emerald-300 mt-1">✨ ${item.bonusText}</p>
+                                <p class="text-xs text-slate-300 mt-1">${item.desc}</p>
                             </div>
                             ${owned
-                                ? `<button disabled class="w-full py-2 rounded-xl bg-white/10 text-slate-400 text-xs font-semibold">已擁有</button>`
+                                ? `<button onclick="placeAndEditDecor('${item.id}')" class="w-full py-2 rounded-xl bg-cyan-500/25 hover:bg-cyan-500/40 text-cyan-100 font-semibold text-xs sm:text-sm transition">🖐️ 擺放並調整位置</button>`
                                 : `<button onclick="buyDecor('${item.id}')" class="w-full py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-bold text-xs sm:text-sm shadow transition">購買造景 🪙 ${item.price}</button>`
                             }
                         </div>
@@ -2208,7 +2588,7 @@ function renderModalContent() {
                                     <span class="text-[10px] px-1.5 py-0.5 rounded border ${rMeta.bg} ${rMeta.color}">${rMeta.label}</span>
                                 </div>
                                 <p class="text-xs text-slate-300 mt-1 line-clamp-2">${unlocked ? sp.desc : '購買對應魚苗包以解鎖此魚種圖鑑。'}</p>
-                                ${unlocked ? `<div class="text-[11px] text-amber-300/90 mt-1.5">成魚售價：🪙 ${sp.basePrice} • 收益：+${sp.passiveRate}/25s</div>` : ''}
+                                ${unlocked ? `<div class="text-[11px] text-amber-300/90 mt-1.5">成魚售價：🪙 ${sp.basePrice} • 收益：+${sp.passiveRate}/分</div>` : ''}
                             </div>
                         </div>
                     `;
@@ -2264,11 +2644,18 @@ function buyUpgrade(upgradeId) {
     }
     gameState.coins -= cost;
     gameState[upgradeId] = curLv + 1;
+    if (upgradeId === 'tankLevel') {
+        applyTankSizeUpgrade();
+        camRadius = Math.max(camRadius, 11.2 + (gameState.tankLevel - 1) * 1.1);
+        updateCameraPosition();
+    }
     playSound('coin');
     saveGame();
     updateHUD();
     renderModalContent();
-    showToast(`⚙️ ${upg.name} 已升級至 Lv.${curLv + 1}！`);
+    showToast(upgradeId === 'tankLevel'
+        ? `📐 魚缸已實際擴建至 Lv.${curLv + 1}（最大容納 ${getMaxCapacity(curLv + 1)} 隻魚）！`
+        : `⚙️ ${upg.name} 已升級至 Lv.${curLv + 1}！`);
 }
 
 function buyDecor(decorId) {
@@ -2280,12 +2667,24 @@ function buyDecor(decorId) {
     }
     gameState.coins -= item.price;
     gameState.unlockedDecors.push(decorId);
-    sync3DDecors();
+    gameState.placedDecors[decorId] = { ...item.defaultPos };
+    sync3DDecors(true);
     playSound('coin');
     saveGame();
     updateHUD();
-    renderModalContent();
-    showToast(`🪸 已將「${item.name}」擺入水族箱！`);
+    enterDecorEditMode(decorId);
+    showToast(`🎨 已購買「${item.name}」，請拖曳調整想擺放的位置！`);
+}
+
+function placeAndEditDecor(decorId) {
+    const item = DECOR_ITEMS.find(d => d.id === decorId);
+    if (!item) return;
+    if (!gameState.placedDecors[decorId]) {
+        gameState.placedDecors[decorId] = { ...item.defaultPos };
+        sync3DDecors(true);
+        saveGame();
+    }
+    enterDecorEditMode(decorId);
 }
 
 // 12. 主動畫與生態模擬迴圈（支援時間流速倍率與 S 型擬真游動）
@@ -2325,6 +2724,19 @@ function animate(now) {
         sw.mesh.rotation.x = Math.cos(elapsed * 1.1 + sw.phase) * 0.06;
     });
 
+    decorMeshes.forEach(mesh => {
+        if (mesh.userData.swayLeaves) {
+            mesh.userData.swayLeaves.forEach(leaf => {
+                leaf.mesh.rotation.z = leaf.baseZ + Math.sin(elapsed * 1.6 + leaf.phase) * 0.12;
+            });
+        }
+        if (mesh.userData.tentacles) {
+            mesh.userData.tentacles.forEach(t => {
+                t.pivot.rotation.z = t.baseTilt + Math.sin(elapsed * 2.1 + t.phase) * 0.14;
+            });
+        }
+    });
+
     bubbles.forEach(b => {
         b.mesh.position.y += b.speed * rawDt * (0.7 + speedMult * 0.25);
         b.mesh.position.x += Math.sin(elapsed * 3 + b.wobble) * 0.004;
@@ -2346,9 +2758,7 @@ function animate(now) {
         }
     }
 
-    const growthMultiplier = (1 + (gameState.heaterLevel - 1) * 0.18)
-        * (gameState.unlockedDecors.includes('driftwood') ? 1.10 : 1)
-        * (gameState.unlockedDecors.includes('volcano') ? 1.10 : 1);
+    const growthMultiplier = 1 + (gameState.heaterLevel - 1) * 0.12;
 
     gameState.fishes.forEach(fish => {
         const sp = FISH_SPECIES.find(s => s.id === fish.speciesId);
@@ -2468,7 +2878,7 @@ function animate(now) {
     });
 
     passiveCoinTimer += simDt;
-    if (passiveCoinTimer >= 25.0) {
+    if (passiveCoinTimer >= 60.0) {
         passiveCoinTimer = 0;
         let gainedTotal = 0;
         gameState.fishes.forEach(fish => {
@@ -2552,8 +2962,9 @@ function shiftHueHex(hex, shift) {
 window.onload = function () {
     initThree();
     loadGame();
+    applyTankSizeUpgrade();
     sync3DFishes();
-    sync3DDecors();
+    sync3DDecors(true);
     setLighting(gameState.lighting || 'day');
     setTimeScale(gameState.timeScale || 1);
     updateHUD();
